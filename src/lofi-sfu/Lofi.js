@@ -13,12 +13,12 @@ class Lofi extends EventEmitter {
     workerIdx++;
     workerIdx %= workers?.length;
 
-    const speakerObserver = await router?.createActiveSpeakerObserver({
-      interval: 300
-    });
+    // const speakerObserver = await router?.createActiveSpeakerObserver({
+    //   interval: 300
+    // });
 
     const audioLevelObserver = await router?.createAudioLevelObserver({
-      maxEntries: 1,
+      // maxEntries: 1,
       threshold: -80,
       interval: 800
     });
@@ -27,7 +27,7 @@ class Lofi extends EventEmitter {
       worker,
       router,
       state: {},
-      speakerObserver,
+      // speakerObserver,
       audioLevelObserver
     },
     room_id);
@@ -53,7 +53,7 @@ class Lofi extends EventEmitter {
     this.audioLevelObserver = room.audioLevelObserver;
 
     /** activeSpeakerObserver */
-    this.activeSpeakerObserver = room.speakerObserver;
+    // this.activeSpeakerObserver = room.speakerObserver;
 
     /** Handle audioObservers */
     // this._handleAudioObservers(room_id);
@@ -216,10 +216,10 @@ class Lofi extends EventEmitter {
       }));
 
       if (kind === 'audio') {
-        this.activeSpeakerObserver.addProducer({ producerId: producer.id })
-          .catch((err) => {
-            console.log(err);
-          });
+        // this.activeSpeakerObserver.addProducer({ producerId: producer.id })
+        //   .catch((err) => {
+        //     console.log(err);
+        //   });
 
         this.audioLevelObserver.addProducer({ producerId: producer.id })
           .catch((err) => {

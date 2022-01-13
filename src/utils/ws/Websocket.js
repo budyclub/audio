@@ -285,7 +285,7 @@ class WebsocketConnection {
 
             console.log('AudioLevel Observer [volume:"%s"]', volume, appData);
 
-            /** broadcast too all peers in the room */
+            /** signal active speaker to all peers in the room*/
             for (const [k, _] of room.users) {
               if(k in this.ws_User) {
                 this.ws_User[k].ws.send(this.encodeMsg({
@@ -294,6 +294,10 @@ class WebsocketConnection {
                 }));
               }
             }
+          });
+
+          room.lf?.audioLevelObserver.on('silence', (silence) => {
+            console.log('on silence [silence:"%s"]', silence);
           });
 
           /** Get all the rooms and broadcast them*/

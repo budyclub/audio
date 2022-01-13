@@ -1,0 +1,42 @@
+{
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres",
+    "use_env_variable": "DEV_DATABASE_URL",
+    "charset": "utf8",
+    "logging": true
+  },
+  "development": {
+    "username": "postgres",
+    "password": "1208",
+    "database": "test_db",
+    "host": "172.17.59.2",
+    "dialect": "postgres",
+    "charset": "utf8",
+    "logging": true
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "postgres",
+    "use_env_variable": "DATABASE_URL",
+    "charset": "utf8",
+    "logging": false,  
+    "ssl": true,
+    "pool": {
+      "max": 95,
+      "min": 0,
+      "acquire":20000,
+      "idle": 20000,
+      "evict":10000
+    },
+    "dialectOptions": {
+      "ssl": { "rejectUnauthorized": false }
+    }
+  }
+}
