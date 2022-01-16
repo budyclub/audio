@@ -81,7 +81,9 @@ class WebsocketConnection {
      */
     this.wss = new WebSocket.Server({ noServer: true });
     this.wss.on('connection', (ws, req) => {
-      this._onSocketConnection(ws, req);
+      const {user_id} = req;
+      this.ws_User[user_id] = { ws, room: null };
+      this._onSocketConnection(ws, user_id);
     });
     server.on('upgrade', (req, skt, head) => {
       const [_, query] = req.url.split('?');
@@ -117,10 +119,7 @@ class WebsocketConnection {
    * @param {Socket} socket
    * @memberof WebsocketConnection
    */
-  _onSocketConnection(socket, req) {
-    const { user_id } = req;
-
-    this.ws_User[user_id] = { ws: socket, room: null };
+  _onSocketConnection(socket, user_id) {
 
     let lastPing = Date.now();
 
@@ -142,12 +141,13 @@ class WebsocketConnection {
       }
       this._onMessage(msg, socket, user_id);
     });
+    
     socket.on('error', e => console.log('websocket error onError', e));
     socket.on('close', e => {
       clearInterval(interval);
       // delete from ws_User
       if (user_id in this.ws_User) {
-        console.log(`Closing Websocket for user ${user_id} Reason`, e);
+        console.log(`Removing Websocket for user ${user_id} Reason`, e);
         delete this.ws_User[user_id];
       }
       for (const value of this.room.values()) {
@@ -229,13 +229,13 @@ class WebsocketConnection {
             speakers: new Set(),
             roomMessages: new Map().set(data_to_save?.room_id, []),
             lf: lofi,
-          }, this);
+          });
 
           this.room.add(newRoom);
           const room_id = data_to_save?.room_id;
           const room = this.room.get(room_id);
           const user = room.users.add(
-            new UsersInRoom(dataValues, room, this)
+            new UsersInRoom(dataValues, room)
           );
           const speakers = room?.speakers?.add(user?.id);
 
@@ -345,7 +345,7 @@ class WebsocketConnection {
               }, user_id, this.ws_User[data?.user_id]?.ws);
 
               const user = room?.users.add(
-                new UsersInRoom(dataValues, room, this),
+                new UsersInRoom(dataValues, room),
               );
               // current room_id a user is in
 
@@ -602,11 +602,13 @@ class WebsocketConnection {
         case "get_user_profile": {
           const { dataValues } = await user(data);
 
-          this.ws_User[user_id].ws.send(this.encodeMsg({
-            act: "get_user_profile_done",
-            dt: { ...dataValues },
-            ref_id,
-          }));
+          if(user_id in this.ws_User){
+            this.ws_User[user_id].ws.send(this.encodeMsg({
+              act: "get_user_profile_done",
+              dt: { ...dataValues },
+              ref_id,
+            }));
+          }
           break;
         }
         case "get_rooms_list": {
@@ -619,19 +621,23 @@ class WebsocketConnection {
         case "follow_unfollow": {
           const _response = await insertFollows(data?.id_followed, data?.id_following, data?.action);
 
-          this.ws_User[user_id].ws.send(this.encodeMsg({
-            act: "follow_unfollow_done",
-            dt: _response,
-          }));
+          if(user_id in this.ws_User){
+            this.ws_User[user_id]?.ws.send(this.encodeMsg({
+              act: "follow_unfollow_done",
+              dt: _response,
+            }));
+          }
           break;
         }
         case "update_user_profile": {
           const _response = await updateUserProfile(data, user_id);
 
-          this.ws_User[user_id].ws.send(this.encodeMsg({
-            act: "update_user_profile_done",
-            dt: _response,
-          }));
+          if(user_id in this.ws_User){
+            this.ws_User[user_id]?.ws.send(this.encodeMsg({
+              act: "update_user_profile_done",
+              dt: _response,
+            }));
+          }
           break;
         }
         case "set_chat": {
@@ -663,12 +669,11 @@ class WebsocketConnection {
 
             if(room.roomMessages.has(data?.room_id)) {
               const msg = room.roomMessages.get(data?.room_id)?.push(msgData);
-
-              console.log(room.roomMessages.get(data?.room_id));
+              // console.log(room.roomMessages.get(data?.room_id));
             }
 
             for (const [k, v] of room.users) {
-              if(k in this.ws_User) {
+              if(k in this.ws_User && this.ws_User[k].ws.OPEN) {
                 this.ws_User[k].ws.send(this.encodeMsg({
                   act: `new_chat_msg_${data?.room_id}`,
                   dt: msgData,
@@ -821,7 +826,7 @@ class WebsocketConnection {
   }
 
   sendWsMsg(user_id, encodedMsg) {
-    if (user_id in this.ws_User) {
+    if (user_id in this.ws_User && this.ws_User[user_id]?.ws.OPEN) {
       try {
         this.ws_User[user_id].ws.send(encodedMsg);
       } catch (err) {

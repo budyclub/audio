@@ -13,7 +13,8 @@
     "username": "postgres",
     "password": "1208",
     "database": "test_db",
-    "host": "172.17.59.2",
+    "use_env_variable": "DATABASE_URL",
+    "host": "localhost",
     "dialect": "postgres",
     "charset": "utf8",
     "logging": true

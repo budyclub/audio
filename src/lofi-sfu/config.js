@@ -60,8 +60,7 @@ module.exports = {
       listenIps: [
         {
           ip: process.env.MEDIASOUP_LISTEN_IP,
-          // announcedIp,
-          announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP,
+          announcedIp: process.env.NODE_ENV === 'development' ? announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP,
         }
       ],
       initialAvailableOutgoingBitrate: 1000000,
