@@ -1,8 +1,6 @@
 /* eslint-disable prefer-reflect */
 /* eslint-disable no-plusplus */
 
-"use strict";
-
 /* eslint-disable no-undef */
 const debugModule = require('debug');
 const { EventEmitter } = require('eventemitter3');
@@ -40,7 +38,7 @@ const {
 } = require('../../cassandra/');
 
 
-const { user, userNotificationId, getNotificationIds } = require('../../database/user');
+const { user: getCurrentUser, userNotificationId, getNotificationIds } = require('../../database/user');
 
 const { createMessage, sendPushNotif } = require('../../node-gcm/push-notification');
 
@@ -81,9 +79,10 @@ class WebsocketConnection {
      */
     this.wss = new WebSocket.Server({ noServer: true });
     this.wss.on('connection', (ws, req) => {
-      const {user_id} = req;
+      const { user_id } = req;
+
       this.ws_User[user_id] = { ws, room: null };
-      this._onSocketConnection(ws, user_id);
+      this._onSocketConnection(this.ws_User[user_id]?.ws, user_id);
     });
     server.on('upgrade', (req, skt, head) => {
       const [_, query] = req.url.split('?');
@@ -106,14 +105,6 @@ class WebsocketConnection {
   }
 
   /**
-   *
-   */
-
-  heartbeat() {
-    this.isAlive = true;
-  }
-
-  /**
    * Handle new connection: assign id and initialize token list
    *
    * @param {Socket} socket
@@ -128,20 +119,27 @@ class WebsocketConnection {
 
       if (timeSincePing > 30000) {
         console.log(`killing ws after ${timeSincePing}ms for`, user_id);
-        socket?.terminate()
+        socket?.terminate();
+
+        return;
       }
+      socket.send('pong');
     }, 5000 + 1000);
 
     socket.on('message', msg => {
       if(msg === `"ping"` || msg === `ping`) {
-        // console.log("in", "ping");
+        console.log("in", "ping");
         lastPing = Date.now();
 
         return;
       }
       this._onMessage(msg, socket, user_id);
     });
-    
+
+    socket.on('open', () => {
+      console.log('ws opened')
+    })
+
     socket.on('error', e => console.log('websocket error onError', e));
     socket.on('close', e => {
       clearInterval(interval);
@@ -176,29 +174,16 @@ class WebsocketConnection {
   }
 
   async _onMessage(message, ws, user_id) {
-    const userData = await user(user_id);
-    const { dataValues } = { ...userData };
-
-    if(typeof dataValues === 'undefined') {
-      delete this.ws_User[user_id];
-      ws.terminate();
-
-      return;
-    }
-    const m = message === null || message === void 0 ? void 0 : message;
-
     let msg;
 
-    if (m) {
+    if (message) {
       try {
-        msg = JSON.parse(m);
+        msg = JSON.parse(message);
       } catch (err) {
         debug('Json parser error', err);
       }
     }
     const { dt: data, act, ref_id } = msg;
-
-    // console.log('we got a message', act);
 
     if (msg && act) {
       switch (act) {
@@ -208,6 +193,7 @@ class WebsocketConnection {
             dt: { room_id: uuidV4() },
             user_id: data.user_id,
           };
+          const { dataValues } = await getCurrentUser(data?.user_id);
           const lofi = await Lofi.createRoom(this.worker_routers, dt.dt.room_id);
 
           const data_to_save = {
@@ -251,14 +237,17 @@ class WebsocketConnection {
               isMod: true,
             },
           };
-          const resp = await _joinRoom(...Object.values(user_to_save));
 
-          user.joined_at = resp.created_at;
+
           user.room_permisions.isSpeaker = true;
           user.room_permisions.isMod = true;
           user.current_room_id = room_id;
-          await updateUserRoomPermisons(true, room_id, user.joined_at, "isSpeaker");
-          await updateUserRoomPermisons(true, room_id, user.joined_at, "isMod");
+
+          /** send the room creater a message */
+          ws.send(this.encodeMsg({
+            act: "create_room_done",
+            dt: { room_id: data_to_save.room_id, user_id },
+          }));
 
           // send a push notification to all my followers
           // get their fcm ids from database
@@ -303,20 +292,18 @@ class WebsocketConnection {
           /** Get all the rooms and broadcast them*/
           this.getAllActiveRooms();
 
-          /** send the room creater a message */
+          const resp = await _joinRoom(...Object.values(user_to_save));
 
-          if(data.user_id in this.ws_User) {
-            this.ws_User[data.user_id].ws.send(this.encodeMsg({
-              act: "create_room_done",
-              dt: { room_id: data_to_save.room_id, user_id },
-            }));
-          }
+          user.joined_at = resp.created_at;
+          await updateUserRoomPermisons(true, room_id, user.joined_at, "isSpeaker");
+          await updateUserRoomPermisons(true, room_id, user.joined_at, "isMod");
           break;
         }
 
         case "join_room_and_get_info": {
           console.log(`${act}.........`, data);
           const isRoom = this.room.has(data?.room_id);
+          const { dataValues } = await getCurrentUser(data?.user_id);
 
           if(isRoom) {
             const room = this.room.get(data?.room_id);
@@ -333,22 +320,25 @@ class WebsocketConnection {
                 // join as speaker
                 const resp = await room.lf?.join_as_speaker(data?.room_id, user_id);
 
+                ws.send(this.encodeMsg({ act: 'you_joined_as_speaker', dt: { ...resp, user_id } }));
+
                 await _addMuteMap(data.room_id, user_id, true, room?.created_at);
 
-                this.ws_User[user_id]?.ws.send(this.encodeMsg({ act: 'you_joined_as_speaker', dt: { ...resp, user_id } }));
+                return;
               }
             } else {
-              // join as listener
-              await room.lf?.join_room_as_listener({
-                room_id: data?.room_id,
-                peer_id: user_id
-              }, user_id, this.ws_User[data?.user_id]?.ws);
+              if(user_id in this.ws_User) {
+                this.ws_User[user_id].ws.send(JSON.stringify({
+                  act: "updateRoomMessages",
+                  dt: roomMessages.reverse(),
+                }));
+              }
 
               const user = room?.users.add(
                 new UsersInRoom(dataValues, room),
               );
-              // current room_id a user is in
 
+              // current room_id a user is in
               user.current_room_id = data?.room_id;
 
               const user_to_save = {
@@ -362,6 +352,12 @@ class WebsocketConnection {
                   isMod: false,
                 },
               };
+
+              // join as listener
+              await room.lf?.join_room_as_listener({
+                room_id: data?.room_id,
+                peer_id: user_id
+              }, user_id, this.ws_User[user_id].ws);
               const resp = await _joinRoom(...Object.values(user_to_save));
 
               user.joined_at = resp.created_at;
@@ -377,13 +373,6 @@ class WebsocketConnection {
                   dt: { ...r_info },
                 }));
               }
-            }
-
-            if(user_id in this.ws_User) {
-              this.ws_User[user_id].ws.send(JSON.stringify({
-                act: "updateRoomMessages",
-                dt: roomMessages.reverse(),
-              }));
             }
           }else{
             await deleteUsersInRoom(data?.room_id);
@@ -418,6 +407,9 @@ class WebsocketConnection {
 
               return;
             }
+
+            const { dataValues } = await getCurrentUser(user_id);
+
             // get mods id or room owner id;
 
             const { created_by_id } = room;
@@ -600,9 +592,9 @@ class WebsocketConnection {
           break;
         }
         case "get_user_profile": {
-          const { dataValues } = await user(data);
+          const { dataValues } = await getCurrentUser(data);
 
-          if(user_id in this.ws_User){
+          if(user_id in this.ws_User) {
             this.ws_User[user_id].ws.send(this.encodeMsg({
               act: "get_user_profile_done",
               dt: { ...dataValues },
@@ -621,7 +613,7 @@ class WebsocketConnection {
         case "follow_unfollow": {
           const _response = await insertFollows(data?.id_followed, data?.id_following, data?.action);
 
-          if(user_id in this.ws_User){
+          if(user_id in this.ws_User) {
             this.ws_User[user_id]?.ws.send(this.encodeMsg({
               act: "follow_unfollow_done",
               dt: _response,
@@ -632,7 +624,7 @@ class WebsocketConnection {
         case "update_user_profile": {
           const _response = await updateUserProfile(data, user_id);
 
-          if(user_id in this.ws_User){
+          if(user_id in this.ws_User) {
             this.ws_User[user_id]?.ws.send(this.encodeMsg({
               act: "update_user_profile_done",
               dt: _response,
@@ -654,6 +646,7 @@ class WebsocketConnection {
         case "send_chat_msg": {
           if(this.room.has(data?.room_id)) {
             // get the room from database
+            const { dataValues } = await getCurrentUser(user_id);
 
             const room = this.room.get(data?.room_id);
 
@@ -714,8 +707,6 @@ class WebsocketConnection {
       }
     }
     if (msg && act && act in AUTH_FUNCTION) {
-      // console.log(dataValues);
-      this.user = new User(dataValues);
       this.ws_User[user_id]?.ws.send(this.encodeMsg({ act: 'we_are_good_to_go', user_id, onlineCount: this.onlineCount }));
     }
   }
