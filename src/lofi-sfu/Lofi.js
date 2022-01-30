@@ -1,3 +1,4 @@
+/* eslint-disable require-await */
 /* eslint-disable no-useless-return */
 /* eslint-disable no-inline-comments */
 const { EventEmitter } = require("eventemitter3");
@@ -13,21 +14,21 @@ class Lofi extends EventEmitter {
     workerIdx++;
     workerIdx %= workers?.length;
 
-    // const speakerObserver = await router?.createActiveSpeakerObserver({
-    //   interval: 300
-    // });
+    const speakerObserver = await router?.createActiveSpeakerObserver({
+      interval: 300
+    });
 
     const audioLevelObserver = await router?.createAudioLevelObserver({
       maxEntries: 1,
       threshold: -80,
-      interval: 800
+      interval: 500
     });
 
     return new Lofi({
       worker,
       router,
       state: {},
-      // speakerObserver,
+      speakerObserver,
       audioLevelObserver
     },
     room_id);
@@ -53,7 +54,7 @@ class Lofi extends EventEmitter {
     this.audioLevelObserver = room.audioLevelObserver;
 
     /** activeSpeakerObserver */
-    // this.activeSpeakerObserver = room.speakerObserver;
+    this.activeSpeakerObserver = room.speakerObserver;
 
     /** Handle audioObservers */
     // this._handleAudioObservers(room_id);
@@ -88,7 +89,7 @@ class Lofi extends EventEmitter {
       await transport.connect({ dtlsParameters });
     } catch (e) {
       console.log(`@connect_transport_${direction}_error`, e);
-      ws[user_id].ws.send(JSON.stringify({
+      ws[user_id]?.ws.send(JSON.stringify({
         act: `@connect_transport_${direction}_done`,
         dt: { error: e.message, room_id },
       }));
@@ -97,7 +98,7 @@ class Lofi extends EventEmitter {
     }
 
     console.log("connect to transport done", transport.appData);
-    ws[user_id].ws.send(JSON.stringify({
+    ws[user_id]?.ws.send(JSON.stringify({
       act: `@connect_transport_${direction}_done`,
       dt: { room_id },
     }));
@@ -162,7 +163,7 @@ class Lofi extends EventEmitter {
         consumers.forEach((c) => c.close());
         // #todo give some time for frontend to get update, but this can be removed
 
-        ws[my_peer_id].ws.send(JSON.stringify({
+        ws[my_peer_id]?.ws.send(JSON.stringify({
           room_id,
           act: "close_consumer",
           dt: { producerId: previousProducer.id, room_id },
@@ -198,7 +199,7 @@ class Lofi extends EventEmitter {
           );
 
           console.log('new peer speaker data):-');
-          ws[their_peer_id].ws.send(JSON.stringify({
+          ws[their_peer_id]?.ws.send(JSON.stringify({
             act: "on_new_peer_speaker",
             dt: { ...d, room_id },
           }));
@@ -207,7 +208,7 @@ class Lofi extends EventEmitter {
         }
       }
 
-      ws[user_id].ws.send(JSON.stringify({
+      ws[user_id]?.ws.send(JSON.stringify({
         act: `@send_track_${direction}_done`,
         dt: {
           id: producer.id,
@@ -216,10 +217,10 @@ class Lofi extends EventEmitter {
       }));
 
       if (kind === 'audio') {
-        // this.activeSpeakerObserver.addProducer({ producerId: producer.id })
-        //   .catch((err) => {
-        //     console.log(err);
-        //   });
+        this.activeSpeakerObserver.addProducer({ producerId: producer.id })
+          .catch((err) => {
+            console.log(err);
+          });
 
         this.audioLevelObserver.addProducer({ producerId: producer.id })
           .catch((err) => {
@@ -229,7 +230,7 @@ class Lofi extends EventEmitter {
 
     } catch (e) {
       console.log(e);
-      ws[user_id].ws.send(JSON.stringify({
+      ws[user_id]?.ws.send(JSON.stringify({
         act: `@send_track_${direction}_done`,
         dt: {
           error: e.message,
@@ -282,7 +283,7 @@ class Lofi extends EventEmitter {
         continue;
       }
     }
-    ws[user_id].ws?.send(JSON.stringify({
+    ws[user_id]?.ws.send(JSON.stringify({
       act: "@recv_tracks_done",
       dt: { consumerParametersArr, room_id },
     }));
@@ -342,13 +343,15 @@ class Lofi extends EventEmitter {
    * @returns
    */
 
-  async join_room_as_listener({ room_id, peer_id }, user_id, ws) {
+  async join_room_as_listener({ room_id, peer_id }) {
     if (!(room_id in this.rooms)) {
       console.log('room does not exist');
 
       return false;
     }
     console.log("joined room as listener", peer_id);
+    // leave room you could have joined before
+    await this.leave_room(room_id, peer_id);
     const { state, router } = this.rooms[room_id];
 
     let recvTransport;
@@ -368,16 +371,11 @@ class Lofi extends EventEmitter {
       sendTransport: null,
     };
 
-    ws?.send(JSON.stringify({
-      act: "joined_as_listener",
-      dt: {
-        room_id,
-        peer_id,
-        routerRtpCapabilities: this.rooms[room_id].router.rtpCapabilities,
-        recvTransportOptions: this.transportToOptions(recvTransport),
-      },
-      user_id,
-    }));
+    return{
+      routerRtpCapabilities: this.rooms[room_id].router.rtpCapabilities,
+      recvTransportOptions: this.transportToOptions(recvTransport),
+    }
+
   }
 
   /**
@@ -388,7 +386,7 @@ class Lofi extends EventEmitter {
    * @returns {Promise<Boolean>}
    */
 
-  async add_speaker({ room_id, peer_id }, user_id, ws) {
+  async add_speaker({ room_id, peer_id }) {
     if (!this.rooms[room_id].state[peer_id]) {
       return;
     }
@@ -397,15 +395,11 @@ class Lofi extends EventEmitter {
 
     this.rooms[room_id].state[peer_id]?.sendTransport?.close();
     this.rooms[room_id].state[peer_id].sendTransport = sendTransport;
-    ws?.send(JSON.stringify({
-      act: "on_added_as_speaker",
-      dt: {
-        sendTransportOptions: this.transportToOptions(sendTransport),
-        routerRtpCapabilities: router?.rtpCapabilities,
-        room_id,
-      },
-      user_id,
-    }));
+
+    return {
+      sendTransportOptions: this.transportToOptions(sendTransport),
+      routerRtpCapabilities: router?.rtpCapabilities,
+    }
   }
 
   /**
@@ -415,15 +409,17 @@ class Lofi extends EventEmitter {
    * @returns
    */
 
-  remove_speaker({ room_id, peer_id }, user_id, ws) {
-    if (room_id in this.rooms) {
-      const peer = this.rooms[room_id].state[peer_id];
+  async remove_speaker({ room_id, peer_id }) {
+    return new Promise((resolve, _) => {
+      if (room_id in this.rooms) {
+        const peer = this.rooms[room_id].state[peer_id];
 
-      peer?.producer?.close();
-      peer?.sendTransport?.close();
-    }
+        peer?.producer?.close();
+        peer?.sendTransport?.close();
+      }
 
-    return{ user_id, act: "speaker_removed", room_id };
+      resolve({ peer_id, act: "speaker_removed", room_id });
+    });
   }
 
   /**
@@ -433,15 +429,12 @@ class Lofi extends EventEmitter {
    * @returns
    */
 
-  leave_room(room_id, peer_id) {
+  async leave_room(room_id, peer_id) {
     if(!(room_id in this.rooms)) return;
     if (peer_id in this.rooms[room_id].state) {
-      this.closePeer(this.rooms[room_id].state[peer_id]);
-      console.log('closing peer');
+      await this.closePeer(this.rooms[room_id]?.state[peer_id]);
       // eslint-disable-next-line prefer-reflect
       delete this.rooms[room_id].state[peer_id];
-
-      return;
     }
     if (Object.keys(this.rooms[room_id]?.state).length === 0) {
       if (!(room_id in this.rooms)) {
@@ -460,10 +453,10 @@ class Lofi extends EventEmitter {
    * @returns
    */
 
-  destroy_room(room_id, user_id) {
+  async destroy_room(room_id, user_id) {
     if (room_id in this.rooms) {
       for (const peer of Object.values(this.rooms[room_id]?.state)) {
-        this.closePeer(peer);
+        await this.closePeer(peer);
       }
       if (!(room_id in this.rooms)) {
         return;
@@ -474,25 +467,26 @@ class Lofi extends EventEmitter {
     }
   }
 
-  // /**
-  //  *
-  //  */
-  // _handleAudioObservers(room_id) {
-  //   this.audioLevelObserver.on('volumes', (volumes) => {
-  //     const { producer: { appData }, volume } = volumes[0];
-  //     // console.log('audioLevelObserver [volume:"%s"]', volume, appData, room_id);
-  //     this.emit('speakingchange', { user_id: appData.peer_id, room_id, volume });
-  //   });
+  /**
+   *
+   */
+  _handleAudioObservers(room_id) {
+    this.audioLevelObserver.on('volumes', (volumes) => {
+      const { producer: { appData }, volume } = volumes[0];
+      // console.log('audioLevelObserver [volume:"%s"]', volume, appData, room_id);
 
-  //   this.audioLevelObserver.on('silence', (silence) => {
-  //     console.log('on silence [silence:"%s"]', silence);
-  //     // this.emit('speakingchange', { user_id: appData.peer_id, room_id, volume });
-  //   });
+      this.emit('speakingchange', { user_id: appData.peer_id, room_id, volume });
+    });
 
-  //   this.activeSpeakerObserver.on('dominantspeaker', (dSpk) => {
-  //     console.log('dominantspeaker [spk: "%s"]', dSpk?.producer);
-  //   });
-  // }
+    this.audioLevelObserver.on('silence', (silence) => {
+      console.log('on silence [silence:"%s"]', silence);
+      // this.emit('speakingchange', { user_id: appData.peer_id, room_id, volume });
+    });
+
+    this.activeSpeakerObserver.on('dominantspeaker', (dSpk) => {
+      console.log('dominantspeaker [spk: "%s"]', dSpk?.producer);
+    });
+  }
 
   /**
    *
@@ -571,11 +565,13 @@ class Lofi extends EventEmitter {
     };
   }
 
-  closePeer(state) {
-    state.producer?.close();
-    state.recvTransport?.close();
-    state.sendTransport?.close();
-    state.consumers.forEach((c) => c.close());
+  async closePeer(state) {
+    return await Promise.all([
+      state.producer?.close(),
+      state.recvTransport?.close(),
+      state.sendTransport?.close(),
+      state.consumers.forEach((c) => c.close()),
+    ]).catch(err => console.log(err))
   }
 
   transportToOptions({

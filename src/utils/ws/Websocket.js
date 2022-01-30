@@ -1,6 +1,3 @@
-/* eslint-disable prefer-reflect */
-/* eslint-disable no-plusplus */
-
 /* eslint-disable no-undef */
 const debugModule = require('debug');
 const { EventEmitter } = require('eventemitter3');
@@ -10,7 +7,7 @@ const querystring = require('querystring');
 const { v4: uuidV4 } = require('uuid');
 
 const mediasoup = require('mediasoup');
-const config = require("../../lofi-sfu/config");
+const config = require('../../lofi-sfu/config');
 
 const { verifyToken } = require('../auth/tokenAuth');
 const { rep_code } = require('../../config/reply_codes');
@@ -42,7 +39,7 @@ const { user: getCurrentUser, userNotificationId, getNotificationIds } = require
 
 const { createMessage, sendPushNotif } = require('../../node-gcm/push-notification');
 
-const debug = debugModule("Goliatho:index");
+const debug = debugModule('Goliatho:index');
 const Lofi = require('../../lofi-sfu/Lofi');
 
 
@@ -127,18 +124,14 @@ class WebsocketConnection {
     }, 5000 + 1000);
 
     socket.on('message', msg => {
-      if(msg === `"ping"` || msg === `ping`) {
-        console.log("in", "ping");
+      if(msg === '"ping"' || msg === 'ping') {
+        console.log('in', 'ping');
         lastPing = Date.now();
 
         return;
       }
       this._onMessage(msg, socket, user_id);
     });
-
-    socket.on('open', () => {
-      console.log('ws opened')
-    })
 
     socket.on('error', e => console.log('websocket error onError', e));
     socket.on('close', e => {
@@ -156,16 +149,22 @@ class WebsocketConnection {
 
           for (const [k, v] of rm.users) {
             if(value.created_by_id === user_id) {
-              // deleteUsersInRoom(r_id);
-              // const r_info = this.getActiveRoomInfo(r_id);
-              // v?.client?.ws_User[k]?.ws.send(this.encodeMsg({
-              //   act: 'onNewRoomData',
-              //   dt: {...r_info},
-              // }));
+
+              /*
+               * deleteUsersInRoom(r_id);
+               * const r_info = this.getActiveRoomInfo(r_id);
+               * v?.client?.ws_User[k]?.ws.send(this.encodeMsg({
+               *   act: 'onNewRoomData',
+               *   dt: {...r_info},
+               * }));
+               */
             }else {
               console.log('listner leaving room');
-              // leaveRoom(r_id, u?.joined_at);
-              // rm?.users?.remove(u);
+
+              /*
+               * leaveRoom(r_id, u?.joined_at);
+               * rm?.users?.remove(u);
+               */
             }
           }
         }
@@ -187,7 +186,7 @@ class WebsocketConnection {
 
     if (msg && act) {
       switch (act) {
-        case "create_room": {
+        case 'create_room': {
           const dt = {
             act,
             dt: { room_id: uuidV4() },
@@ -244,32 +243,38 @@ class WebsocketConnection {
           user.current_room_id = room_id;
 
           /** send the room creater a message */
-          ws.send(this.encodeMsg({
-            act: "create_room_done",
+          await this.sendWsMsg(user_id, this.encodeMsg({
+            act: 'create_room_done',
             dt: { room_id: data_to_save.room_id, user_id },
           }));
 
-          // send a push notification to all my followers
-          // get their fcm ids from database
+          /*
+           * send a push notification to all my followers
+           * get their fcm ids from database
+           */
 
           // const filteredNotifIds = notifIds.map((v, i) => v?.u_followed?.notification_id).filter(x => Boolean(x));
 
-          // const msg = createMessage({
-          //   title: "👋, Your Buddy has created a room can join to listen❔",
-          //   icon: "ic_launcher",
-          //   body: `${room?.about_room}`
-          // });
+          /*
+           * const msg = createMessage({
+           *   title: "👋, Your Buddy has created a room can join to listen❔",
+           *   icon: "ic_launcher",
+           *   body: `${room?.about_room}`
+           * });
+           */
 
-          // msg.addData({
-          //   click_action: `budyclub://room/${room_id}`,
-          //   imgUrl: `https://graph.facebook.com/${dataValues?.FB_id}/picture?type=large`,
-          //   room_id: `${room_id}`,
-          //   type: 'push',
-          // });
+          /*
+           * msg.addData({
+           *   click_action: `budyclub://room/${room_id}`,
+           *   imgUrl: `https://graph.facebook.com/${dataValues?.FB_id}/picture?type=large`,
+           *   room_id: `${room_id}`,
+           *   type: 'push',
+           * });
+           */
 
           // sendPushNotif(msg, filteredNotifIds);
 
-          room.lf?.audioLevelObserver.on('volumes', (volumes) => {
+          room?.lf.audioLevelObserver.on('volumes', (volumes) => {
             const { producer: { appData }, volume } = volumes[0];
 
             console.log('AudioLevel Observer [volume:"%s"]', volume, appData);
@@ -277,7 +282,7 @@ class WebsocketConnection {
             /** signal active speaker to all peers in the room*/
             for (const [k, _] of room.users) {
               if(k in this.ws_User) {
-                this.ws_User[k].ws.send(this.encodeMsg({
+                this.sendWsMsg(k, this.encodeMsg({
                   act: `onactivespeaker-${room_id}`,
                   dt: { user_id: appData.peer_id, room_id, volume },
                 }));
@@ -285,7 +290,7 @@ class WebsocketConnection {
             }
           });
 
-          room.lf?.audioLevelObserver.on('silence', (silence) => {
+          room?.lf.audioLevelObserver.on('silence', (silence) => {
             console.log('on silence [silence:"%s"]', silence);
           });
 
@@ -295,13 +300,12 @@ class WebsocketConnection {
           const resp = await _joinRoom(...Object.values(user_to_save));
 
           user.joined_at = resp.created_at;
-          await updateUserRoomPermisons(true, room_id, user.joined_at, "isSpeaker");
-          await updateUserRoomPermisons(true, room_id, user.joined_at, "isMod");
+          await updateUserRoomPermisons(true, room_id, user.joined_at, 'isSpeaker');
+          await updateUserRoomPermisons(true, room_id, user.joined_at, 'isMod');
           break;
         }
 
-        case "join_room_and_get_info": {
-          console.log(`${act}.........`, data);
+        case 'join_room_and_get_info': {
           const isRoom = this.room.has(data?.room_id);
           const { dataValues } = await getCurrentUser(data?.user_id);
 
@@ -317,19 +321,22 @@ class WebsocketConnection {
               const isMod = user_id === room?.created_by_id && user.room_permisions?.isSpeaker;
 
               if(isMod) {
+                let _resp;
                 // join as speaker
-                const resp = await room.lf?.join_as_speaker(data?.room_id, user_id);
 
-                ws.send(this.encodeMsg({ act: 'you_joined_as_speaker', dt: { ...resp, user_id } }));
+                try {
+                  _resp = await this.joinRoom(true, { room_id: room.id, user_id });
+                } catch (error) {
+                  console.log(error);
+                }
+                console.log(`${act}.........`, _resp);
 
                 await _addMuteMap(data.room_id, user_id, true, room?.created_at);
-
-                return;
               }
             } else {
               if(user_id in this.ws_User) {
-                this.ws_User[user_id].ws.send(JSON.stringify({
-                  act: "updateRoomMessages",
+                await this.sendWsMsg(user_id, this.encodeMsg({
+                  act: 'updateRoomMessages',
                   dt: roomMessages.reverse(),
                 }));
               }
@@ -354,13 +361,13 @@ class WebsocketConnection {
               };
 
               // join as listener
-              await room.lf?.join_room_as_listener({
-                room_id: data?.room_id,
-                peer_id: user_id
-              }, user_id, this.ws_User[user_id].ws);
+              await this.joinRoom(false, data);
+
               const resp = await _joinRoom(...Object.values(user_to_save));
 
               user.joined_at = resp.created_at;
+
+              console.log(`${act}.........`, data);
             }
 
             /** get the new room information */
@@ -380,7 +387,7 @@ class WebsocketConnection {
           }
           break;
         }
-        case "request_to_speak": {
+        case 'request_to_speak': {
           const isRoom = this.room.has(data?.room_id);
 
           if(isRoom) {
@@ -388,18 +395,22 @@ class WebsocketConnection {
             // check whether the room has max of 5 speakers
             const speakers = room?.speakers;
 
-            // if(speakers.size > 5) {
-            //   this.ws_User[data?.user_id].ws.send(JSON.stringify({
-            //     act: "SpeakerListFull",
-            //     dt: { c: '000' },
-            //   }));
+            /*
+             * if(speakers.size > 5) {
+             *   this.ws_User[data?.user_id].ws.send(JSON.stringify({
+             *     act: "SpeakerListFull",
+             *     dt: { c: '000' },
+             *   }));
+             */
 
-            //   return;
-            // }
+            /*
+             *   return;
+             * }
+             */
 
             if (!room?.raiseHandActive) {
-              this.sendWsMsg(data?.user_id, JSON.stringify({
-                act: "onCantReqToSpeak",
+              this.sendWsMsg(data?.user_id, this.encodeMsg({
+                act: 'onCantReqToSpeak',
                 dt: {
                   msg: 'Request to speak is Disabled.'
                 }
@@ -416,30 +427,35 @@ class WebsocketConnection {
             const _user = room.users.get(data?.user_id);
 
             _user.room_permisions.requested_to_speak = true;
-            // send mod or current room owner list of pple who want to speak,
-            // the mod or current room owner must be online.
+
+            /*
+             * send mod or current room owner list of pple who want to speak,
+             * the mod or current room owner must be online.
+             */
             const { user_name, photo_url, num_follower, bio, FB_id } = dataValues;
 
-            await updateUserRoomPermisons(true, data?.room_id, _user.joined_at, "requested_to_speak");
+            await updateUserRoomPermisons(true, data?.room_id, _user.joined_at, 'requested_to_speak');
 
             // const requests = room?.requests;
 
-            // if(requests.has(data?.user_id)) {
-            //   return;
-            // }
+            /*
+             * if(requests.has(data?.user_id)) {
+             *   return;
+             * }
+             */
 
             // requests.set(data?.user_id, { ...data, user_name, photo_url, num_follower, bio, FB_id });
 
             if(created_by_id in this.ws_User) {
-              this.ws_User[created_by_id]?.ws.send(JSON.stringify({
-                act: "onRequest",
+              this.sendWsMsg(created_by_id, this.encodeMsg({
+                act: 'onRequest',
                 dt: { ...data, user: { user_name, photo_url, num_follower, bio, FB_id } },
               }));
             }
           }
           break;
         }
-        case "add_speaker": {
+        case 'add_speaker': {
           const isRoom = this.room.has(data?.room_id);
 
           if(isRoom) {
@@ -450,20 +466,25 @@ class WebsocketConnection {
             user.room_permisions.isSpeaker = true;
             room.muted_speakers_obj[data?.user_id] = true;
             user.current_room_id = data?.room_id;
-            await updateUserRoomPermisons(true, data?.room_id, user.joined_at, "isSpeaker");
+            await updateUserRoomPermisons(true, data?.room_id, user.joined_at, 'isSpeaker');
             await _addMuteMap(data?.room_id, data?.user_id, false, room?.created_at);
 
-            try {
-              await room.lf.add_speaker({
+
+            const resp = await room.lf.add_speaker({
+              room_id: data?.room_id,
+              peer_id: data?.user_id
+            });
+
+            const msg = this.encodeMsg({
+              act: "on_added_as_speaker",
+              dt: {
+                ...resp,
                 room_id: data?.room_id,
-                peer_id: data?.user_id
               },
-              data?.user_id,
-              this.ws_User[data?.user_id]?.ws
-              );
-            } catch (err) {
-              console.log(err);
-            }
+              user_id: data?.user_id,
+            });
+
+            await this.sendWsMsg(data?.user_id, msg);
 
             /** get the new room information */
             const r_info = this.getActiveRoomInfo(data?.room_id);
@@ -479,7 +500,7 @@ class WebsocketConnection {
           }
           break;
         }
-        case "leave_room": {
+        case 'leave_room': {
           const isRoom = this.room.has(data?.room_id);
 
           if(!isRoom) {
@@ -493,7 +514,7 @@ class WebsocketConnection {
 
             if(user_id === room?.created_by_id) {
               try {
-                room.lf.destroy_room(data?.room_id, data?.id);
+                await room?.lf.destroy_room(data?.room_id, data?.id);
                 this.room.delete(data.room_id);
                 await deleteRoom(data?.room_id);
                 await deleteUsersInRoom(`${data?.room_id}`);
@@ -501,7 +522,7 @@ class WebsocketConnection {
                 debug(err);
               }
             }else if(user) {
-              room.lf.leave_room(data.room_id, user_id);
+              await room?.lf.leave_room(data.room_id, user_id);
               room.users.remove(user);
               await leaveRoom(data?.room_id, user?.joined_at);
             }
@@ -509,7 +530,7 @@ class WebsocketConnection {
           break;
         }
 
-        case "speaking_change": {
+        case 'speaking_change': {
           const isRoom = this.room.has(data?.room_id);
 
           if (isRoom) {
@@ -534,9 +555,9 @@ class WebsocketConnection {
         }
 
         /**
-           * set mute
-           */
-        case "mute": {
+         * set mute
+         */
+        case 'mute': {
           const { isMuted, room_id, user_id } = data;
           const isRoom = this.room.has(room_id);
 
@@ -565,15 +586,20 @@ class WebsocketConnection {
          * Remove speaker #set user as listener
          */
 
-        case "remove_speaker": {
+        case 'remove_speaker': {
           const isRoom = this.room.has(data?.room_id);
 
           if(isRoom) {
+            const room = this.room.get(data?.room_id);
+
+            const resp = await room?.lf.remove_speaker({ room_id: data?.room_id, peer_id: data?.user_id });
+
+            console.log(resp);
           }
           break;
         }
 
-        case "destroy_room": {
+        case 'destroy_room': {
 
           /**
            * Delete the room from the store
@@ -583,7 +609,7 @@ class WebsocketConnection {
           if(isRoom) {
             const room = this.room.get(data?.room_id);
 
-            room.lf.destroy_room(room?.room_id, data?.user_id);
+            await room?.lf.destroy_room(room?.room_id, data?.user_id);
             this.room.delete(data.room_id);
             await deleteRoom(data?.room_id);
             await deleteUsersInRoom(data?.room_id);
@@ -591,59 +617,59 @@ class WebsocketConnection {
           this.getAllActiveRooms();
           break;
         }
-        case "get_user_profile": {
+        case 'get_user_profile': {
           const { dataValues } = await getCurrentUser(data);
 
           if(user_id in this.ws_User) {
-            this.ws_User[user_id].ws.send(this.encodeMsg({
-              act: "get_user_profile_done",
+            await this.sendWsMsg(user_id, this.encodeMsg({
+              act: 'get_user_profile_done',
               dt: { ...dataValues },
               ref_id,
             }));
           }
           break;
         }
-        case "get_rooms_list": {
+        case 'get_rooms_list': {
           this.getAllActiveRooms(ref_id);
           break;
         }
-        case "room_chat_message": {
+        case 'room_chat_message': {
           break;
         }
-        case "follow_unfollow": {
+        case 'follow_unfollow': {
           const _response = await insertFollows(data?.id_followed, data?.id_following, data?.action);
 
           if(user_id in this.ws_User) {
-            this.ws_User[user_id]?.ws.send(this.encodeMsg({
-              act: "follow_unfollow_done",
+            await this.sendWsMsg(user_id, this.encodeMsg({
+              act: 'follow_unfollow_done',
               dt: _response,
             }));
           }
           break;
         }
-        case "update_user_profile": {
+        case 'update_user_profile': {
           const _response = await updateUserProfile(data, user_id);
 
           if(user_id in this.ws_User) {
-            this.ws_User[user_id]?.ws.send(this.encodeMsg({
-              act: "update_user_profile_done",
+            await this.sendWsMsg(user_id, this.encodeMsg({
+              act: 'update_user_profile_done',
               dt: _response,
             }));
           }
           break;
         }
-        case "set_chat": {
+        case 'set_chat': {
           if(this.room.has(data?.room_id)) {
             const room = this.room.get(data?.room_id);
 
-            this.ws_User[user_id].ws.send(this.encodeMsg({
-              act: "set_chat_done",
+            await this.sendWsMsg(user_id, this.encodeMsg({
+              act: 'set_chat_done',
               dt: data?.v,
             }));
           }
           break;
         }
-        case "send_chat_msg": {
+        case 'send_chat_msg': {
           if(this.room.has(data?.room_id)) {
             // get the room from database
             const { dataValues } = await getCurrentUser(user_id);
@@ -676,22 +702,38 @@ class WebsocketConnection {
           }
           break;
         }
-        case "set_raised_hand": {
+        case 'set_raised_hand': {
           if(this.room.has(data?.room_id)) {
             const room = this.room.get(data?.room_id);
 
             // console.log("Before", room.raiseHandActive);
             room.raiseHandActive = data?.v;
             // console.log("After", room.raiseHandActive);
-            this.ws_User[user_id].ws.send(this.encodeMsg({
-              act: "set_raised_hand_done",
+            await this.sendWsMsg(user_id, this.encodeMsg({
+              act: 'set_raised_hand_done',
               dt: data?.v,
             }));
           }
           break;
         }
+        case 'reconnect_to_lofi': {
+          if(this.room.has(data?.room_id)) {
+            const room = this.room.get(data?.room_id);
+            const user = room?.users.get(data?.user_id);
+
+            /** check if user is a mod in the room */
+            // const isMod = user_id === room?.created_by_id && user.room_permisions?.isSpeaker;
+            const resp = await this.joinRoom(user_id === room?.created_by_id, data);
+
+            await this.sendWsMsg(user_id, this.encodeMsg({
+              act: 'reconnect_to_lofi_done',
+              dt: { resp },
+            }));
+          }
+          break;
+        }
         default:
-          if (act in ACTION_CODE_FUNCTION && act.startsWith("@")) {
+          if (act in ACTION_CODE_FUNCTION && act.startsWith('@')) {
 
             /**
              * check if room exist
@@ -701,13 +743,19 @@ class WebsocketConnection {
             if(!isRoom) return;
             const room = this.room.get(data?.room_id);
 
-            ACTION_CODE_FUNCTION[act](act, data, this.ws_User, room.lf);
+            ACTION_CODE_FUNCTION[act](act, data, this.ws_User, room?.lf);
           }
           break;
       }
     }
     if (msg && act && act in AUTH_FUNCTION) {
-      this.ws_User[user_id]?.ws.send(this.encodeMsg({ act: 'we_are_good_to_go', user_id, onlineCount: this.onlineCount }));
+      const msg = this.encodeMsg({
+        act: 'we_are_good_to_go',
+        user_id,
+        onlineCount: this.onlineCount
+      });
+
+      await this.sendWsMsg(user_id, msg);
     }
   }
 
@@ -732,7 +780,7 @@ class WebsocketConnection {
               FB_id: e?.FB_id,
               current_room_id: e?.current_room_id,
               room_permisions: e?.room_permisions,
-            }
+            };
 
             u.push(user);
           }
@@ -755,6 +803,14 @@ class WebsocketConnection {
 
   get onlineCount() {
     return Object.keys(this.ws_User).length;
+  }
+
+  getRoom(id) {
+    if(this.room.has(id)) {
+      return this.room.get(id);
+    }else{
+      return null;
+    }
   }
 
   /**
@@ -812,18 +868,22 @@ class WebsocketConnection {
     if(this.room.has(room_id)) {
       return this.room.get(room_id);
     }else {
-      return {}
+      return {};
     }
   }
 
-  sendWsMsg(user_id, encodedMsg) {
-    if (user_id in this.ws_User && this.ws_User[user_id]?.ws.OPEN) {
-      try {
-        this.ws_User[user_id].ws.send(encodedMsg);
-      } catch (err) {
-        console.log(err);
-      }
-    }
+  async sendWsMsg(user_id, encodedMsg) {
+    const ws = this.ws_User[user_id]?.ws;
+
+    return new Promise((resolve, reject) => {
+      ws?.send(encodedMsg, { compress: false, binary: false }, error => {
+        if(error) {
+          console.log(error);
+          reject(error);
+        }
+        resolve();
+      });
+    });
   }
 
   encodeMsg(msg) {
@@ -834,14 +894,44 @@ class WebsocketConnection {
     }
   }
 
-  async getUser(user_id) {
-    const { dataValues } = await user(user_id);
+  async _getUser(user_id) {
+    const { dataValues } = await getCurrentUser(user_id);
 
     return dataValues;
   }
 
+  async joinRoom(isSpeaker, data) {
+    const room = this.getRoom(data.room_id);
+
+    if(isSpeaker) {
+      const resp = await room.lf?.join_as_speaker(data.room_id, data.user_id);
+      const msg = this.encodeMsg({ act: 'you_joined_as_speaker', dt: { ...resp, user_id: data.user_id } });
+
+      return await this.sendWsMsg(data?.user_id, msg);
+    }
+
+    if(!isSpeaker) {
+      const resp = await room.lf?.join_room_as_listener({
+        room_id: data?.room_id,
+        peer_id: data?.user_id
+      });
+
+      const msg = this.encodeMsg({
+        act: "joined_as_listener",
+        dt: {
+          room_id: data?.room_id,
+          peer_id: data?.user_id,
+          ...resp
+        },
+        user_id: data?.user_id
+      });
+
+      return await this.sendWsMsg(data?.user_id, msg);
+    }
+  }
+
   async startSfu() {
-    for (let i = 0; i < config.mediasoup.numWorkers; i++) {
+    for (let i = 0; i < config.mediasoup.numWorkers; i += 1) {
       const worker = await mediasoup.createWorker({
         logLevel: config.mediasoup.workerSettings.logLevel,
         logTags: config.mediasoup.workerSettings.logTags,
@@ -849,8 +939,8 @@ class WebsocketConnection {
         rtcMaxPort: config.mediasoup.workerSettings.rtcMaxPort,
       });
 
-      worker.on("died", () => {
-        console.error("mediasoup worker died (this should never happen)");
+      worker.on('died', () => {
+        console.error('mediasoup worker died (this should never happen)');
 
         process.exit(1);
       });

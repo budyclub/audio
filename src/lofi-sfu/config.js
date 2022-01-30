@@ -59,7 +59,7 @@ module.exports = {
       preferUdp: true,
       listenIps: [
         {
-          ip: process.env.MEDIASOUP_LISTEN_IP,
+          ip: process.env.NODE_ENV === 'development' ? '0.0.0.0' : process.env.MEDIASOUP_LISTEN_IP,
           announcedIp: process.env.NODE_ENV === 'development' ? announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP,
         }
       ],
