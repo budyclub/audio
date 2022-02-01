@@ -315,7 +315,7 @@ class Lofi extends EventEmitter {
     });
 
     if (peer_id in state) {
-      this.closePeer(state[peer_id]);
+      await this.closePeer(state[peer_id]);
     }
 
     this.rooms[room_id].state[peer_id] = {
@@ -350,9 +350,12 @@ class Lofi extends EventEmitter {
       return false;
     }
     console.log("joined room as listener", peer_id);
-    // leave room you could have joined before
-    await this.leave_room(room_id, peer_id);
+
     const { state, router } = this.rooms[room_id];
+
+    if (state[peer_id]) {
+      await this.closePeer(state[peer_id]);
+    }
 
     let recvTransport;
 
@@ -361,9 +364,7 @@ class Lofi extends EventEmitter {
     } catch (err) {
       console.log(err);
     }
-    if (state[peer_id]) {
-      this.closePeer(state[peer_id]);
-    }
+
     this.rooms[room_id].state[peer_id] = {
       recvTransport,
       consumers: [],

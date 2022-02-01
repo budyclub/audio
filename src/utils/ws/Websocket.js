@@ -526,6 +526,18 @@ class WebsocketConnection {
               room.users.remove(user);
               await leaveRoom(data?.room_id, user?.joined_at);
             }
+
+            /** Broadcast room changes */
+            const r_info = this.getActiveRoomInfo(data?.room_id);
+
+            for (const [k, v] of room.users) {
+              if (k in this.ws_User) {
+                this.ws_User[k].ws.send(this.encodeMsg({
+                  act: 'onNewRoomData',
+                  dt: { ...r_info },
+                }));
+              }
+            }
           }
           break;
         }
@@ -725,9 +737,10 @@ class WebsocketConnection {
             // const isMod = user_id === room?.created_by_id && user.room_permisions?.isSpeaker;
             const resp = await this.joinRoom(user_id === room?.created_by_id, data);
 
+            console.log(resp);
             await this.sendWsMsg(user_id, this.encodeMsg({
               act: 'reconnect_to_lofi_done',
-              dt: { resp },
+              dt: resp,
             }));
           }
           break;
@@ -821,7 +834,9 @@ class WebsocketConnection {
   getActiveRoomInfo(room_id) {
     const room = this.getActiveRoom(room_id);
 
-    if(Object.entries(room).length === 0) return {};
+    if(Object.keys(room).length === 0) {
+      return;
+    }
 
     return {
       room_id: room?.id,
@@ -879,9 +894,10 @@ class WebsocketConnection {
       ws?.send(encodedMsg, { compress: false, binary: false }, error => {
         if(error) {
           console.log(error);
-          reject(error);
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject({ error });
         }
-        resolve();
+        resolve(true);
       });
     });
   }
