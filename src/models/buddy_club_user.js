@@ -28,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
   Buddy_Club_User.init({
     user_id: {
       type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
     providerId: DataTypes.STRING,
