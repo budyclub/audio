@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "pm2": "pm2 start npm --name lofi -- run 'start'",
     "start": "export NODE_ENV=development&& cross-env DEBUG=Goliatho:* nodemon index.js",
     "migrate": "export NODE_ENV=production&& cd src&& npx sequelize-cli db:migrate",
     "undo": "export NODE_ENV=production&& cd src&& npx sequelize-cli db:migrate:undo",
     "sync": "export NODE_ENV=development&& cd src/database&& node index.js",
     "undoall": "export NODE_ENV=production&& cd src&& npx sequelize-cli db:migrate:undo:all",
     "dev": "export NODE_ENV=development&& cross-env DEBUG=Goliatho:* nodemon ./src/g.js",
-    "prod": "export NODE_ENV=production&& cross-env DEBUG=Goliatho:* node ./src/g.js",
+    "prod": "export NODE_ENV=production&& cross-env DEBUG=Goliatho:* node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

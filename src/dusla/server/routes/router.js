@@ -39,7 +39,13 @@ const routes = {
       // get the user by user name, uuid or email
       const { id } = req.params;
 
-      const resp = await getUser(id);
+      let resp;
+
+      try {
+        resp = await getUser(id);
+      } catch (err) {
+        console.log(err);
+      }
 
       console.log('following', resp?.dataValues?.following?.length);
       console.log('followers', resp?.dataValues?.follower?.length);

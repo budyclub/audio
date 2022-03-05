@@ -1,18 +1,18 @@
-// const session = require("express-session");
-
-// const RedisStore = require("connect-redis")(session);
-// const _redisClient = require('./src/lib/redis/redisClient');
+const session = require("express-session");
+const Redis = require('ioredis');
+const RedisStore = require("connect-redis")(session);
 
 const { Server } = require("./src/dusla/server");
 
 
 (async function() {
 
-  // const sess_store = new RedisStore({ client: _redisClient, ttl: 84600 });
+  const sess_store = new RedisStore({ client: new Redis(), ttl: 84600 });
 
   const _sever = new Server({
     secret: 'expensive-session-secret',
-    port: 8002
+    port: process.env.PORT,
+    session_store: sess_store,
   });
 
   _sever.express_app.get('/', (req, res) => {

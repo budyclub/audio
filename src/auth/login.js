@@ -74,15 +74,15 @@ router.post('/u', async (req, res) => {
       const u = await db.Buddy_Club_User.findOne({
         where: {
           FB_id: {
-            [Op.eq]: d?.FB_id,
+            [Op.eq]: d.FB_id,
           }
         }
       });
 
-      if (u?.dataValues?.user_id) {
+      if (u.dataValues.user_id) {
         req.session.user_data = u.dataValues;
         res.json({
-          access_token: auThToken({ data: u?.dataValues }),
+          access_token: auThToken({ data: u.dataValues }),
           code: 0,
         });
       }else{

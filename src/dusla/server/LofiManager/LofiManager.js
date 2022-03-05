@@ -55,7 +55,7 @@ class LofiManager extends EventEmitter {
     const pWs = ctx._ws.has(data.user_id) ? ctx._ws.get(data.user_id) : null;
 
     if(lofi) {
-      room_peers = lofi.rooms[data.room_id]?.state;
+      room_peers = lofi.rooms[data.room_id]?.state ?? {};
     }
 
     switch (act) {
@@ -276,7 +276,7 @@ class LofiManager extends EventEmitter {
     let _ws = null;
 
     if(!ws._ws.has(peer_id)) {
-      return new Promise.reject(new Error('You do not have websocket connection.'));
+      return Promise.reject(new Error('You do not have websocket connection.'));
     }
 
     _ws = ws._ws.get(peer_id);
@@ -297,12 +297,12 @@ class LofiManager extends EventEmitter {
     }
 
     if(!lofi) {
-      return new Promise.reject(new Error('Lofi instance is not yet created!'));
+      return Promise.reject(new Error('Lofi instance is not yet created!'));
     }
 
-    const { state } = lofi.rooms[room_id];
-
     await this._joinRoom(isSpeaker, room_id, peer_id, lofi, _ws).catch(err => errLog(err));
+
+    const { state } = lofi.rooms[room_id];
 
     if(iSnewpeer) {
       for await (const peer of Object.keys(state)) {
