@@ -104,13 +104,13 @@ async function getRoom(room_id) {
         require: true,
         as: 'room_messages',
         attributes: { exclude: ['message_id', 'updatedAt'] },
-        include: [
-          {
-            model: Buddy_Club_User,
-            as: 'peer_messages',
-            attributes: ['photo_url', 'user_id', 'FB_id', 'user_name', 'online', 'last_online']
-          }
-        ]
+        // include: [
+        //   {
+        //     model: Buddy_Club_User,
+        //     as: 'peer_messages',
+        //     attributes: ['photo_url', 'user_id', 'FB_id', 'user_name', 'online', 'last_online']
+        //   }
+        // ]
       }
     ],
     // raw: true,
@@ -121,8 +121,19 @@ async function getRoomCreator(room_id) {
   return await Room.findByPk(room_id, { attributes: ['created_by_id'] })
 }
 
-async function updateRoom() {
-
+async function updateRoom({ name, description, room_id }) {
+  return await Room.update({
+    about_room: description,
+    room_name: name
+  }, {
+    where: {
+      room_id: {
+        [Op.eq]: room_id,
+      }
+    },
+    returning: true,
+    plain: true,
+  });
 }
 
 async function removeRoom(room_id) {

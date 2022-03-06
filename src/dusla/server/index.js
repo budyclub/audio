@@ -74,7 +74,7 @@ class Server extends LofiManager {
 
     app.use('/', login());
     app.use('/', routes.rooms());
-    app.use('/', routes.u());
+    app.use('/', routes.userProfile());
     app.use('/', routes.follow());
     app.use('/', routes.ff());
     app.use('/', routes.setNotification_id());
@@ -86,7 +86,6 @@ class Server extends LofiManager {
     app.use('/', router.get('/room/:room_id/u/:user_id', async (req, res) => {
       await this.joinRoom(req, res).catch(err => errLog('join room error', err));
     }));
-    app.use('/', router.post('add-speaker', this.addSpeaker));
 
     return app;
   }
@@ -302,8 +301,22 @@ class Server extends LofiManager {
     // when peer is a speaker in the room join him as a speaker.
     const isSpeaker = dataValues.room_permisions.isSpeaker;
 
-    const room = await this.getRoomById(room_id).catch(err => errLog(err));
+    const [room, user] = await Promise.all([
+      this.getRoomById(room_id),
+      this._returnUser(user_id),
+    ]);
 
+    this.new_peer = this._returnPeer(dataValues, user);
+
+    await this._createLofiSfuInstance(room_id, isSpeaker, user_id, this, isNewRecord).catch(err => log(err));
+
+    res.json({
+      act: 'join_room_done',
+      ...room,
+    });
+  }
+
+  async _returnUser(user_id) {
     const key = `current-user:${user_id}`;
 
     let user = await cache.get(key);
@@ -316,21 +329,7 @@ class Server extends LofiManager {
       user = data_values;
     }
 
-    this.new_peer = this._returnPeer(dataValues, user);
-
-    const lofiResp = await this._createLofiSfuInstance(room_id, isSpeaker, user_id, this, isNewRecord).catch(err => log(err));
-
-    // for debugging purpose
-    log(lofiResp);
-
-    res.json({
-      act: 'join_room_done',
-      ...room,
-    });
-  }
-
-  async addSpeaker() {
-
+    return { ...user };
   }
 
   /**
@@ -338,7 +337,11 @@ class Server extends LofiManager {
    * @param {UUID} room_id
    */
   peersInRoom(room_id) {
+    if(this.lofi_sfu.has(room_id)) {
+      const lofi = this.lofi_sfu.get(room_id);
 
+      return lofi.rooms[room_id]?.state ?? {};
+    }
   }
 
   /**
@@ -355,7 +358,7 @@ class Server extends LofiManager {
       errLog('get room error', err);
     }
 
-    return room?.dataValues ?? {}
+    return { ...room.dataValues } ?? {}
   }
 
   /**

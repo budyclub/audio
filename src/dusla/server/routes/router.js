@@ -34,10 +34,16 @@ const routes = {
     });
   },
 
-  u() {
+  userProfile() {
     return router.get('/:id', async (req, res) => {
       // get the user by user name, uuid or email
-      const { id } = req.params;
+      const id = req.params?.id;
+
+      if(!id) {
+        res.status(404);
+
+        return;
+      }
 
       let resp;
 
@@ -47,10 +53,10 @@ const routes = {
         console.log(err);
       }
 
-      console.log('following', resp?.dataValues?.following?.length);
-      console.log('followers', resp?.dataValues?.follower?.length);
+      // console.log('following', resp?.dataValues?.following?.length);
+      // console.log('followers', resp?.dataValues?.follower?.length);
 
-      res.json(resp?.dataValues ?? {});
+      res.json(resp?.dataValues ?? { id });
     });
   },
 

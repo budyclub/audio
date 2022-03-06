@@ -15,6 +15,7 @@ module.exports = {
         references: {
           model: 'Rooms',
           key: 'room_id',
+          onDelete: 'CASCADE'
         }
       },
       user_id: {
@@ -23,10 +24,11 @@ module.exports = {
         references: {
           model: 'Buddy_Club_Users',
           key: 'user_id',
+          onDelete: 'CASCADE'
         }
       },
       message: {
-        type: Sequelize.STRING
+        type: Sequelize.JSONB
       },
       mentions: {
         type: Sequelize.JSONB

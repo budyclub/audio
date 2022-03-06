@@ -6,8 +6,9 @@ const LofiSfu = require('../../../lofi-sfu/Lofi');
 const config = require('../../../lofi-sfu/config');
 const { Server } = require("..");
 const { deletePeer, _updatePeerRoomPermisions, _updatePeerSpeaker } = require("../../../database/roomPeers");
-const { getRoomCreator, removeRoom } = require("../../../database/room");
-const { user: getCurrentUser } = require("../../../database/user");
+const { getRoomCreator, removeRoom, updateRoom } = require("../../../database/room");
+const { user: getCurrentUser, insertFollows } = require("../../../database/user");
+const { createRoomMessage } = require("../../../database/roomMessages");
 
 const log = debug("Goliatho:lofi-manager");
 const errLog = debug("Goliatho:lofi-manager-error");
@@ -90,8 +91,6 @@ class LofiManager extends EventEmitter {
 
         const resp = await lofi.add_speaker(data.room_id, data.user_id)
           .catch(err => errLog(err));
-
-        console.log('add speakerS', resp);
 
         if(!resp) return;
 
@@ -196,6 +195,71 @@ class LofiManager extends EventEmitter {
         await removeRoom(data.room_id);
         break;
       }
+
+      case 'updateroominfo': {
+        let resp;
+
+        for await(const peer of Object.keys(room_peers)) {
+          if(ctx._ws.has(peer)) {
+            await this.sendWsMsg(ctx._ws.get(peer), this.encodeMsg({
+              act: 'roominfochange',
+              dt: data,
+            }))
+          }
+        }
+        await updateRoom(data).then((res) => {
+          resp = res;
+        })
+          .catch(err => errLog(err))
+
+        log(resp);
+        break;
+      }
+
+      case 'follow_unfollow': {
+        const resp = await insertFollows(data?.id_followed, data?.id_following, data?.action)
+          .catch(err => errLog(err));
+
+        if(!pWs) {
+          return Promise.reject(new Error('No websocket connection'))
+        }
+        await this.sendWsMsg(pWs, this.encodeMsg({
+          act: 'follow_unfollow_done',
+          dt: resp
+        }));
+        break;
+      }
+      case 'send_chat_msg': {
+        const { user_name, FB_id } = await ctx._returnUser(data.user_id);
+
+        const msgData = {
+          _id: data._id,
+          ...data.message,
+          user: {
+            _id: data.user_id,
+            name: user_name,
+            avatar: `https://graph.facebook.com/${FB_id}/picture?type=large`,
+          }
+        };
+
+        for await(const peer of Object.keys(room_peers)) {
+          if(ctx._ws.has(peer)) {
+            await this.sendWsMsg(ctx._ws.get(peer), this.encodeMsg({
+              act: `new_chat_msg_${data.room_id}`,
+              dt: msgData,
+            }));
+          }
+        }
+
+        await createRoomMessage({
+          room_id: data.room_id,
+          user_id: data.user_id,
+          message: msgData,
+          mentions: {},
+        }).catch(err => errLog(err));
+
+        break;
+      }
       case '@connect_transport': {
         console.log(act, data);
         try {
@@ -244,12 +308,7 @@ class LofiManager extends EventEmitter {
       }
 
       case 'room_invite': {
-        const{ user_id, room_id, invitee_id } = data;
-
-        break;
-      }
-
-      case 'room_info_change': {
+        const{ user_id, room_id, inviter_id } = data;
 
         break;
       }

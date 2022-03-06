@@ -205,11 +205,13 @@ const updateNotifiactionId = async (notification_id, user_id) => {
 }
 
 const getUser = async (uuid) => {
+  if(uuid === 'favicon.ico')return;
+
   return await db.Buddy_Club_User.findOne({
     where: {
       user_id: {
         [Op.eq]: uuid,
-      },
+      }
     },
     attributes: { exclude: ['updatedAt'] },
     // attributes: {

@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
     },
-    message: DataTypes.STRING,
+    message: DataTypes.JSONB,
     mentions: DataTypes.JSONB
   }, {
     sequelize,
