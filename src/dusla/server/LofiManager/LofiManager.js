@@ -187,6 +187,9 @@ class LofiManager extends EventEmitter {
         const resp = await lofi.destroy_room(data.room_id, data.user_id).catch(err => errLog(err));
 
         for await (const peer of Object.keys(room_peers)) {
+          if(peer === data.user_id) {
+            continue;
+          }
           if(ctx._ws.has(peer)) {
             await this.sendWsMsg(ctx._ws.get(peer), this.encodeMsg(resp));
           }
@@ -204,7 +207,7 @@ class LofiManager extends EventEmitter {
             await this.sendWsMsg(ctx._ws.get(peer), this.encodeMsg({
               act: 'roominfochange',
               dt: data,
-            }))
+            }));
           }
         }
         await updateRoom(data).then((res) => {

@@ -32,7 +32,10 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true
     },
     providerId: DataTypes.STRING,
-    FB_id: DataTypes.BIGINT,
+    FB_id: {
+      type: DataTypes.BIGINT,
+      allowNull: false
+    },
     full_name: DataTypes.STRING,
     user_name: {
       type: DataTypes.STRING,
