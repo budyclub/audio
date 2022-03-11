@@ -16,11 +16,13 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       Room_Messages.belongsTo(m.Buddy_Club_User, {
         foreignKey: 'user_id',
-        as: 'peer_messages'
+        as: 'peer_messages',
+        onDelete: 'CASCADE'
       });
       Room_Messages.belongsTo(m.Room, {
         foreignKey: 'room_id',
-        as: 'room_message'
+        as: 'room_message',
+        onDelete: 'CASCADE'
       });
     }
   }

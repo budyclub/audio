@@ -3,7 +3,7 @@
 "use strict";
 
 const db = require('../models');
-const { Op, fn, col } = require('sequelize');
+const { Op, fn, col, QueryTypes } = require('sequelize');
 
 const { createMessage, sendPushNotif } = require('../node-gcm/push-notification');
 
@@ -190,6 +190,33 @@ const updateUserProfile = async (d, user_id) => {
   }
 }
 
+const updateCurrentRoomId = async (room_id, user_id) => {
+  return await db.Buddy_Club_User.update({ current_room_id: room_id }, {
+    where: {
+      user_id: {
+        [Op.eq]: user_id,
+      }
+    },
+    return: true,
+    plain: true,
+  });
+}
+
+const setIsUserOnline = async (online, user_id) => {
+  return await db.Buddy_Club_User.update({
+    online,
+    last_online: Date.now(),
+  }, {
+    where: {
+      user_id: {
+        [Op.eq]: user_id,
+      }
+    },
+    return: true,
+    plain: true,
+  });
+}
+
 const updateNotifiactionId = async (notification_id, user_id) => {
   const [_, affectedRows] = await db.Buddy_Club_User.update({ notification_id }, {
     where: {
@@ -251,6 +278,13 @@ const getUser = async (uuid) => {
   });
 };
 
+const searchUsers = async (query) => {
+  return await db.sequelize.query(`SELECT full_name, user_name, "FB_id", user_id, num_following, num_follower FROM public."Buddy_Club_Users" WHERE document @@ to_tsquery(:q)`, {
+    replacements: { q: `${query}:*` },
+    type: QueryTypes.SELECT,
+  })
+}
+
 
 module.exports = {
   user,
@@ -261,4 +295,7 @@ module.exports = {
   updateNotifiactionId,
   userNotificationId,
   getNotificationIds,
+  updateCurrentRoomId,
+  searchUsers,
+  setIsUserOnline,
 }

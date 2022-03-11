@@ -80,7 +80,7 @@ class Lofi extends EventEmitter {
       : state[peer_id].sendTransport;
 
     if (!transport) {
-      return false;
+      return Promise.reject(new Error('No webrtc transport has been created!!!'))
     }
 
     try {
@@ -106,7 +106,8 @@ class Lofi extends EventEmitter {
         // peer disconnected; called transport.close() or closed browser tab
         console.log(
           'WebRtcTransport "dtlsstatechange" event, dtlsState',
-          dtlsState
+          { direction,
+            dtlsState }
         );
         transport.close();
       }

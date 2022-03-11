@@ -15,8 +15,8 @@ module.exports = {
         references: {
           model: 'Rooms',
           key: 'room_id',
-          onDelete: 'CASCADE'
-        }
+        },
+        onDelete: 'CASCADE'
       },
       user_id: {
         allowNull: false,
@@ -24,8 +24,8 @@ module.exports = {
         references: {
           model: 'Buddy_Club_Users',
           key: 'user_id',
-          onDelete: 'CASCADE'
-        }
+        },
+        onDelete: 'CASCADE'
       },
       message: {
         type: Sequelize.JSONB

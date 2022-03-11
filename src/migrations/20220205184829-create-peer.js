@@ -26,6 +26,7 @@ module.exports = {
           model: 'Buddy_Club_Users',
           key: 'user_id',
         },
+        onDelete: 'CASCADE'
       },
       room_permisions: {
         type: Sequelize.JSONB

@@ -17,7 +17,7 @@ const LofiManager = require('./LofiManager/LofiManager');
 const { createRoom, getRoom } = require('../../database/room');
 const { createRoomPeer } = require('../../database/roomPeers');
 const cache = require('../../lib/redis/cache');
-const { user: getCurrentUser } = require("../../database/user");
+const { user: getCurrentUser, updateCurrentRoomId } = require("../../database/user");
 
 const log = debug("Goliatho:server");
 const errLog = debug("Goliatho:ERROR");
@@ -80,6 +80,7 @@ class Server extends LofiManager {
     app.use('/', routes.setNotification_id());
     app.use('/', routes.updateRoomPermisions());
     app.use('/', routes.updatePeerSpeaker());
+    app.use('/', routes.searchUsers());
     app.use('/', router.post('/create-room', async (req, res) => {
       await this.createRoom(req, res).catch(err => errLog('create room error', err));
     }));
@@ -304,11 +305,15 @@ class Server extends LofiManager {
     const [room, user] = await Promise.all([
       this.getRoomById(room_id),
       this._returnUser(user_id),
+      updateCurrentRoomId(room_id, user_id),
     ]);
 
     this.new_peer = this._returnPeer(dataValues, user);
 
-    await this._createLofiSfuInstance(room_id, isSpeaker, user_id, this, isNewRecord).catch(err => log(err));
+    const resp = await this._createLofiSfuInstance(room_id, isSpeaker, user_id, this, isNewRecord).catch(err => log(err));
+
+    // for debug purpose
+    console.log(resp);
 
     res.json({
       act: 'join_room_done',

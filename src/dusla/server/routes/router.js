@@ -7,6 +7,7 @@ const {
   getFollowFollowers,
   updateNotifiactionId,
   getNotificationIds,
+  searchUsers,
 } = require('../../../database/user');
 
 // const { createMessage, sendPushNotif } = require('../../../node-gcm/push-notification');
@@ -110,6 +111,20 @@ const routes = {
 
       res.json(resp);
     })
+  },
+
+  searchUsers() {
+    return router.post('/search', async (req, res) => {
+      const query = req.body.q;
+
+      try {
+        const resp = await searchUsers(query);
+
+        res.json(resp);
+      } catch (err) {
+        console.log(err);
+      }
+    });
   }
 }
 

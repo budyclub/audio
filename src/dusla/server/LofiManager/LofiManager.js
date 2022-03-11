@@ -7,7 +7,7 @@ const config = require('../../../lofi-sfu/config');
 const { Server } = require("..");
 const { deletePeer, _updatePeerRoomPermisions, _updatePeerSpeaker } = require("../../../database/roomPeers");
 const { getRoomCreator, removeRoom, updateRoom } = require("../../../database/room");
-const { user: getCurrentUser, insertFollows } = require("../../../database/user");
+const { user: getCurrentUser, insertFollows, updateCurrentRoomId } = require("../../../database/user");
 const { createRoomMessage } = require("../../../database/roomMessages");
 
 const log = debug("Goliatho:lofi-manager");
@@ -141,7 +141,10 @@ class LofiManager extends EventEmitter {
             });
         }
         // remove the peer from data base.
-        await deletePeer(data.user_id, data.room_id)
+        await Promise.all([
+          deletePeer(data.user_id, data.room_id),
+          updateCurrentRoomId(data.room_id, data.user_id),
+        ])
           .catch(err => errLog(err))
           .then((resp) => log('peer left', resp));
         break;
@@ -195,7 +198,10 @@ class LofiManager extends EventEmitter {
           }
         }
 
-        await removeRoom(data.room_id);
+        await Promise.all([
+          removeRoom(data.room_id),
+          updateCurrentRoomId(data.room_id, data.user_id),
+        ])
         break;
       }
 
