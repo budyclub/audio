@@ -257,6 +257,8 @@ class LofiManager extends EventEmitter {
               act: `new_chat_msg_${data.room_id}`,
               dt: msgData,
             }));
+          } else{
+            return Promise.reject(new Error('No peers in this room', data.room_id))
           }
         }
 
@@ -339,8 +341,6 @@ class LofiManager extends EventEmitter {
    * @returns {Promise}
    */
   async _createLofiSfuInstance(room_id, isSpeaker, peer_id, ws, iSnewpeer) {
-    let lofi = null;
-
     let _ws = null;
 
     if(!ws._ws.has(peer_id)) {
@@ -351,26 +351,26 @@ class LofiManager extends EventEmitter {
 
     const isLofi = this.lofi_sfu.has(room_id);
 
-    if (!isLofi && !lofi) {
-      await Promise.all([LofiSfu.createRoom(this.worker_routers, room_id)]).catch((err) => {
-        console.log(err);
-      })
-        .then(([Lofi]) => {
-          lofi = Lofi;
-          this.lofi_sfu.set(room_id, Lofi);
-          this.signalSpeakingChangeToAllPeersInRoom(room_id, lofi, ws);
-        });
-    } else {
-      lofi = this.lofi_sfu.get(room_id);
+    if (!isLofi) {
+      try {
+        const [Lofi] = await Promise.all([LofiSfu.createRoom(this.worker_routers, room_id)]);
+
+        this.lofi_sfu.set(room_id, Lofi);
+        await this.signalSpeakingChangeToAllPeersInRoom(room_id, Lofi, ws);
+      } catch (err) {
+        return Promise.reject(new Error('Failed to create Lofi Instance.', room_id, iSnewpeer));
+      }
     }
+
+    const lofi = this.lofi_sfu.get(room_id);
 
     if(!lofi) {
       return Promise.reject(new Error('Lofi instance is not yet created!'));
     }
 
-    await this._joinRoom(isSpeaker, room_id, peer_id, lofi, _ws).catch(err => errLog(err));
+    await this._joinRoom(isSpeaker, room_id, peer_id, lofi, _ws).catch(err => errLog('error _joinRoom', err));
 
-    const { state } = lofi.rooms[room_id];
+    const state = lofi.rooms[room_id]?.state ?? {};
 
     if(iSnewpeer) {
       for await (const peer of Object.keys(state)) {
@@ -380,6 +380,8 @@ class LofiManager extends EventEmitter {
             act: 'new_peer',
             dt: { ...ws.new_peer }
           }));
+        }else{
+          return Promise.reject(new Error('No peers in this room', data.room_id));
         }
       }
     }

@@ -1,68 +1,82 @@
 version: '3.9'
 services:
   api:
+    env_file: .env
+    image: translite/buddy:${TAG}
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ./
     restart: "unless-stopped"
     volumes:
-      - "./lofi:/mediasoup-src"
-    ports:
-      - "3008:3008"
-      - "${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}:${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}/udp"
-      - "${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}:${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}/tcp"
+      - "./:/usr/local/etc/goliatho"
+    # ports:
+    #   - "3008:3008"
+    #   - "${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}:${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}/udp"
+    #   - "${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}:${MEDIASOUP_MIN_PORT}-${MEDIASOUP_MAX_PORT}/tcp"
+    network_mode: "host"
+    stdin_open: true
+    tty: true
     depends_on:
-      - "db"
-      - "adminer"
+      - "webserver"
+      - "redis"
+      # - "adminer"
     links:
-      - "db"
-    networks:
-      - "budyclub"
+      - "redis"
     logging:
       driver: "json-file"
       options:
         max-size: "100MB"
         max-file: "3"
-    environment:
+    # environment:
       # NODE_ENV: 'production'
       # DOCKER: 'true'
-      DATABASE_URL: "${DATABASE_URL}"
-  db:
-    image: "postgres:${POSTGRES_VERSION}"
-    restart: "always"
+      # DATABASE_URL: "${DATABASE_URL}"
+  # db:
+  #   image: "postgres:${POSTGRES_VERSION}"
+  #   restart: "always"
+  #   volumes:
+  #     - "./db-postgresql-data:/var/lib/postgresql/data"
+  #   environment:
+  #     POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+  #     POSTGRES_USER: "${POSTGRES_USER}"
+  #     POSTGRES_DB: "${POSTGRES_DB}"
+  #   # ports:
+  #   #   - "5432:5432"
+  #   # networks:
+  #   #   - "budyclub"
+  #   network_mode: "host"
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "100MB"
+  #       max-file: '3'
+  redis:
+    image: "redis"
+    network_mode: "host"
+    entrypoint: "redis-server /usr/local/etc/redis/redis.conf"
+    restart: "unless-stopped"
     volumes:
-      - "./db-postgresql-data:/var/lib/postgresql/data"
-    environment:
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_DB: "${POSTGRES_DB}"
-    ports:
-      - "5432:5432"
-    networks:
-      - "budyclub"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100MB"
-        max-file: '3'
-  adminer:
-    image: "adminer"
-    restart: "always"
-    depends_on:
-      - "db"
-    ports:
-      - "8080:8080"
+      - "./redis:/usr/local/etc/redis"
+  # adminer:
+  #   image: "adminer"
+  #   restart: "always"
+  #   depends_on:
+  #     - "db"
+    # ports:
+    #   - "8080:8080"
+    # network_mode: "host"
   #Nginx Service
   webserver:
     image: "nginx:alpine"
     container_name: "budyclubApi"
     restart: "unless-stopped"
+    stdin_open: true
     tty: true
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      - "budyclub"
+    # ports:
+    #   - "80:80"
+    #   - "443:443"
+    # networks:
+    #   - "budyclub"
+    network_mode: "host"
 networks:
   budyclub:
-    driver: "bridge"
+    driver: "host"

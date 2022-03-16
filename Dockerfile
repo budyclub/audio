@@ -17,20 +17,27 @@ RUN mkdir -p /home/buddyclub/api/node_modules && chown -R node:node /home/buddyc
 WORKDIR /home/buddyclub/api
 COPY package.json ./
 COPY yarn.lock ./
-COPY secure-connect-buddy.zip ./
+# COPY secure-connect-buddy.zip ./
 USER node
 RUN yarn install
 
 COPY --chown=node:node . .
 
 # COPY . .
-COPY .env.production .env
+# COPY .env.production .env
 
 # RUN yarn build
 
-ENV NODE_ENV production
+# ENV NODE_ENV production
+ENV NODE_ENV development
+
+#Ports
 EXPOSE 3008
+EXPOSE 80 443 
+EXPOSE 40000-49999/udp
 # Run process via pm2
 # CMD ["pm2-runtime", "start", "process_prod.json"]
 
-CMD [ "node", "src/g.js"]
+# CMD [ "node", "./index.js"]
+
+ENTRYPOINT [ "node", "./index.js" ]

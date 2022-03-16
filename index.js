@@ -11,7 +11,7 @@ const { Server } = require("./src/dusla/server");
 
   const _sever = new Server({
     secret: 'expensive-session-secret',
-    port: 8003,
+    port: process.env.PORT,
     session_store: sess_store,
   });
 

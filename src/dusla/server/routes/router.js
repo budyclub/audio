@@ -51,7 +51,7 @@ const routes = {
       try {
         resp = await getUser(id);
       } catch (err) {
-        console.log(err);
+        console.log('get user error....', err);
       }
 
       // console.log('following', resp?.dataValues?.following?.length);

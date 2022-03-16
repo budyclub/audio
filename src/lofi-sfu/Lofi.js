@@ -18,7 +18,7 @@ class Lofi extends EventEmitter {
     const audioLevelObserver = await router?.createAudioLevelObserver({
       maxEntries: 1,
       threshold: -80,
-      interval: 500
+      interval: 300
     });
 
     return new Lofi({
@@ -145,7 +145,7 @@ class Lofi extends EventEmitter {
     } = data;
 
     if(!(room_id in this.rooms)) {
-      return new Promise.reject(new Error('Room does not exist', room_id));
+      return Promise.reject(new Error('Room does not exist', room_id));
     }
     const ws = ctx._ws.get(user_id);
     const { state, router } = this.rooms[room_id];
@@ -153,7 +153,7 @@ class Lofi extends EventEmitter {
     const transport = sendTransport;
 
     if (!transport) {
-      return new Promise.reject(new Error('Lofi no Transport'));
+      return Promise.reject(new Error('Lofi no Transport'));
     }
 
     try {
@@ -260,7 +260,7 @@ class Lofi extends EventEmitter {
     const transport = state[myPeerId]?.recvTransport ?? null;
 
     if(!transport) {
-      return new Promise.reject(new Error('Lofi no Transport'));
+      return Promise.reject(new Error('Lofi no Transport'));
     }
 
     const consumerParametersArr = [];
@@ -305,7 +305,7 @@ class Lofi extends EventEmitter {
   async join_as_speaker(room_id, peer_id) {
 
     if(!(room_id in this.rooms)) {
-      this.rooms[room_id] = await this.createWorkers();
+      return Promise.reject(new Error('Room does not exist', room_id));
     }
 
     const { router, state } = this.rooms[room_id];
@@ -349,11 +349,8 @@ class Lofi extends EventEmitter {
 
   async join_room_as_listener(room_id, peer_id) {
     if (!(room_id in this.rooms)) {
-      console.log('room does not exist');
-
-      return false;
+      return Promise.reject(new Error('Room does not exist', room_id));
     }
-    console.log("joined room as listener", peer_id);
 
     const { state, router } = this.rooms[room_id];
 
@@ -448,7 +445,7 @@ class Lofi extends EventEmitter {
       if (!(room_id in this.rooms)) {
         return;
       }
-      delete this.rooms[room_id];
+      // delete this.rooms[room_id];
     }
 
     return { act: "peer_left", dt: { room_id, peer_id } }

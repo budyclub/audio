@@ -140,6 +140,7 @@ class Server extends LofiManager {
 
           return;
         }
+        req.__ws = sock;
         this.websocket.emit('connection', sock, req);
       });
     });
@@ -306,14 +307,14 @@ class Server extends LofiManager {
       this.getRoomById(room_id),
       this._returnUser(user_id),
       updateCurrentRoomId(room_id, user_id),
-    ]);
+    ]).catch(err => errLog(err));
 
     this.new_peer = this._returnPeer(dataValues, user);
 
     const resp = await this._createLofiSfuInstance(room_id, isSpeaker, user_id, this, isNewRecord).catch(err => log(err));
 
     // for debug purpose
-    console.log(resp);
+    console.log('_createLofiSfuInstance', resp);
 
     res.json({
       act: 'join_room_done',
