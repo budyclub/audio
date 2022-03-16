@@ -18,7 +18,7 @@ class Lofi extends EventEmitter {
     const audioLevelObserver = await router?.createAudioLevelObserver({
       maxEntries: 1,
       threshold: -80,
-      interval: 300
+      interval: 800
     });
 
     return new Lofi({

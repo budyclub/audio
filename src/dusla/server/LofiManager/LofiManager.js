@@ -429,7 +429,7 @@ class LofiManager extends EventEmitter {
     lofi.audioLevelObserver.on('volumes', (volumes) => {
       const { producer: { appData: { peer_id, transportId } }, volume } = volumes[0];
 
-      // console.log('audioLevelObserver [volume:"%s"]', volume, appData);
+      console.log('audioLevelObserver [volume:"%s"]', volume, appData);
 
       for (const peer of Object.keys(state)) {
         if(ws._ws.has(peer)) {
@@ -451,12 +451,12 @@ class LofiManager extends EventEmitter {
     });
 
     lofi.activeSpeakerObserver.on('dominantspeaker', (dps) => {
-      const { producer: { appData: { peer_id, transportId } } } = dps;
+      // const { producer: { appData: { peer_id, transportId } } } = dps;
 
-      console.log('dominantSpeaker [spk: "%s"]', appData);
-      this.emit(`${room_id}`, dps);
+      console.log('dominantSpeaker [spk: "%s"]', dps);
+      // this.emit(`${room_id}`, dps);
 
-      Promise.resolve(_updatePeerSpeaker(room_id, peer_id, true, 'active_speakers_obj'));
+      // Promise.resolve(_updatePeerSpeaker(room_id, peer_id, true, 'active_speakers_obj'));
     });
   }
 
