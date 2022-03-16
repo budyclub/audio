@@ -1,11 +1,10 @@
+const { redisConn } = require("./redisConn");
+
 // const _redisClient = require('./redisClient');
-const Redis = require("ioredis");
 
 class Cache {
   constructor() {
-    this.redis = new Redis(process.env.REDIS_URL, {
-      keyPrefix: 'cache:',
-    });
+    this.redis = redisConn();
   }
 
   async set(key, value, hrs) {

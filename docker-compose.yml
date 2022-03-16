@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.3'
 services:
   api:
     env_file: .env
@@ -19,8 +19,8 @@ services:
       - "webserver"
       - "redis"
       # - "adminer"
-    links:
-      - "redis"
+    # links:
+    #   - "redis"
     logging:
       driver: "json-file"
       options:
