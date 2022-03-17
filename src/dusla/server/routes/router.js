@@ -36,7 +36,7 @@ const routes = {
   },
 
   userProfile() {
-    return router.get('/:id', async (req, res) => {
+    return router.get('/user/:id', async (req, res) => {
       // get the user by user name, uuid or email
       const id = req.params?.id;
 

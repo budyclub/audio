@@ -53,6 +53,7 @@ class LofiManager extends EventEmitter {
     const { dt: data, act, ref_id } = message;
 
     const lofi = this.lofi_sfu.has(data.room_id) ? this.lofi_sfu.get(data.room_id) : null;
+
     const pWs = ctx._ws.has(data.user_id) ? ctx._ws.get(data.user_id) : null;
 
     if(lofi) {
@@ -238,6 +239,7 @@ class LofiManager extends EventEmitter {
         }));
         break;
       }
+
       case 'send_chat_msg': {
         const { user_name, FB_id } = await ctx._returnUser(data.user_id);
 
@@ -258,7 +260,7 @@ class LofiManager extends EventEmitter {
               dt: msgData,
             }));
           } else{
-            return Promise.reject(new Error('No peers in this room', data.room_id))
+            return Promise.reject(new Error(`No peers in this room ${data?.room_id}`));
           }
         }
 
@@ -356,9 +358,13 @@ class LofiManager extends EventEmitter {
         const [Lofi] = await Promise.all([LofiSfu.createRoom(this.worker_routers, room_id)]);
 
         this.lofi_sfu.set(room_id, Lofi);
+
         await this.signalSpeakingChangeToAllPeersInRoom(room_id, Lofi, ws);
+
       } catch (err) {
+
         return Promise.reject(new Error('Failed to create Lofi Instance.', room_id, iSnewpeer));
+
       }
     }
 
