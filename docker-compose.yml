@@ -76,6 +76,9 @@ services:
     #   - "443:443"
     # networks:
     #   - "budyclub"
+    volumes:
+      - "./nginx/conf/:/etc/nginx/conf.d/:ro"
+      - "./certbot/www:/var/www/certbot/:ro"
     network_mode: "host"
 networks:
   budyclub:

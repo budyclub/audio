@@ -451,12 +451,12 @@ class LofiManager extends EventEmitter {
     });
 
     lofi.activeSpeakerObserver.on('dominantspeaker', (dps) => {
-      // const { producer: { appData: { peer_id, transportId } } } = dps;
+      const { producer: { appData: { peer_id, transportId } } } = dps;
 
-      console.log('dominantSpeaker [spk: "%s"]', dps);
+      console.log('dominantSpeaker [spk: "%s"]', peer_id, transportId);
       // this.emit(`${room_id}`, dps);
 
-      // Promise.resolve(_updatePeerSpeaker(room_id, peer_id, true, 'active_speakers_obj'));
+      Promise.resolve(_updatePeerSpeaker(room_id, peer_id, true, 'active_speakers_obj'));
     });
   }
 
