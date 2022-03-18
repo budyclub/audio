@@ -172,6 +172,7 @@ class Server extends LofiManager {
         return;
       }
       ws.send('pong');
+      ws.pong();
     }, 5000 + 1000);
 
     ws.on('message', (msg) => {

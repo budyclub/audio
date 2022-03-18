@@ -259,8 +259,6 @@ class LofiManager extends EventEmitter {
               act: `new_chat_msg_${data.room_id}`,
               dt: msgData,
             }));
-          } else{
-            return Promise.reject(new Error(`No peers in this room ${data?.room_id}`));
           }
         }
 
@@ -386,8 +384,6 @@ class LofiManager extends EventEmitter {
             act: 'new_peer',
             dt: { ...ws.new_peer }
           }));
-        }else{
-          return Promise.reject(new Error('No peers in this room', data.room_id));
         }
       }
     }
