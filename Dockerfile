@@ -1,14 +1,14 @@
-# FROM node:16-alpine
-# RUN apk add --update alpine-sdk --no-cache python3 py-pip linux-headers net-tools valgrind \
-# 	&& ln -sf python3 /usr/bin/python
+FROM node:16-alpine
+RUN apk add --update alpine-sdk --no-cache python3 py-pip linux-headers net-tools valgrind \
+	&& ln -sf python3 /usr/bin/python
 
-FROM node:latest AS stage-one
-# Install DEB dependencies and others.
-RUN \
-	set -x \
-	&& apt-get update \
-	&& apt-get install -y net-tools build-essential valgrind \
-	&& apt-get install -y python3-pip
+# FROM node:latest AS stage-one
+# # Install DEB dependencies and others.
+# RUN \
+# 	set -x \
+# 	&& apt-get update \
+# 	&& apt-get install -y net-tools build-essential valgrind \
+# 	&& apt-get install -y python3-pip
 
 # Install PM2 globally
 # RUN npm install pm2@latest -g
