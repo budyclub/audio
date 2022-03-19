@@ -160,10 +160,10 @@ class Server extends LofiManager {
   onsocketConnection(ws, req) {
     const { user_id } = req.user_data;
 
-    let lastPing = Date.now();
+    this.lastPing = Date.now();
 
-    const intervalId = setInterval(() => {
-      const timeSincePing = Date.now() - lastPing;
+    this.intervalId = setInterval(() => {
+      const timeSincePing = Date.now() - this.lastPing;
 
       if (timeSincePing > 30000) {
         console.log(`Closing websocket after ${timeSincePing} ms:`, user_id);
@@ -172,13 +172,12 @@ class Server extends LofiManager {
         return;
       }
       ws.send('pong');
-      ws.pong();
     }, 5000 + 1000);
 
     ws.on('message', (msg) => {
       if(msg === '"ping"' || msg === 'ping') {
-        lastPing = Date.now();
-        log(msg);
+        this.lastPing = Date.now();
+        log('in', msg);
 
         return;
       }
@@ -187,12 +186,12 @@ class Server extends LofiManager {
 
     ws.on('error', e => {
       errLog('websocket error onError', e);
-      clearInterval(intervalId);
+      clearInterval(this.intervalId);
       this._ws.delete(user_id);
     });
 
     ws.on('close', (reason) => {
-      clearInterval(intervalId);
+      clearInterval(this.intervalId);
       this._handleOnWsClose(reason, user_id);
     });
   }

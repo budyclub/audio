@@ -255,10 +255,15 @@ class LofiManager extends EventEmitter {
 
         for await(const peer of Object.keys(room_peers)) {
           if(ctx._ws.has(peer)) {
-            await this.sendWsMsg(ctx._ws.get(peer), this.encodeMsg({
+            const ws = ctx._ws.get(peer);
+
+            console.log(ws?.OPEN);
+            await this.sendWsMsg(ws, this.encodeMsg({
               act: `new_chat_msg_${data.room_id}`,
               dt: msgData,
             }));
+          } else {
+            console.log('websocket error sending message');
           }
         }
 
