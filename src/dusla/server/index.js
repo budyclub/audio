@@ -177,7 +177,7 @@ class Server extends LofiManager {
     ws.on('message', (msg) => {
       if(msg === '"ping"' || msg === 'ping') {
         this.lastPing = Date.now();
-        log('in', msg);
+        console.log('in', msg);
 
         return;
       }

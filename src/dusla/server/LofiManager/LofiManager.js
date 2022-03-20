@@ -257,13 +257,11 @@ class LofiManager extends EventEmitter {
           if(ctx._ws.has(peer)) {
             const ws = ctx._ws.get(peer);
 
-            console.log(ws?.OPEN);
+            console.log(ws.OPEN);
             await this.sendWsMsg(ws, this.encodeMsg({
               act: `new_chat_msg_${data.room_id}`,
               dt: msgData,
             }));
-          } else {
-            console.log('websocket error sending message');
           }
         }
 
@@ -474,7 +472,7 @@ class LofiManager extends EventEmitter {
         if(error) {
           reject(new Error(error));
         }
-        resolve(true);
+        resolve();
       });
     });
   }
