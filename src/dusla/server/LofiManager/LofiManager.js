@@ -318,7 +318,14 @@ class LofiManager extends EventEmitter {
 
           return;
         }
-        await this._joinRoom(isSpeaker, room_id, user_id, lofi, pWs);
+        await Promise.all([
+          this._joinRoom(isSpeaker, room_id, user_id, lofi, pWs),
+
+          this.sendWsMsg(pWs, this.encodeMsg({
+            act: 'reconnect_to_lofi_done',
+            dt: true
+          })),
+        ]);
         break;
       }
 
