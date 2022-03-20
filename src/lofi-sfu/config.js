@@ -2,6 +2,7 @@
 /* eslint-disable line-comment-position */
 /* eslint-disable no-undef */
 const os = require('os')
+const process = require('process');
 const local = true;
 const hasMediasoup = true;
 const announcedIp = process.env.A_IP || (local ? localIp() : null);

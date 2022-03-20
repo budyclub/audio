@@ -1,6 +1,7 @@
 const session = require("express-session");
 
 const RedisStore = require("connect-redis")(session);
+const process = require('process');
 
 const { Server } = require("./src/dusla/server");
 const { redisConn } = require("./src/lib/redis/redisConn");

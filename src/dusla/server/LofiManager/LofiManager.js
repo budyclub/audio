@@ -1,4 +1,5 @@
 const { EventEmitter } = require("eventemitter3");
+const process = require('process');
 const mediasoup = require('mediasoup');
 const debug = require('debug');
 
