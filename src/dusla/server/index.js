@@ -163,7 +163,7 @@ class Server extends LofiManager {
 
     this.lastPing = Date.now();
 
-    this.intervalId = setInterval(() => {
+    const intervalId = setInterval(() => {
       const timeSincePing = Date.now() - this.lastPing;
 
       if (timeSincePing > 30000) {
@@ -187,12 +187,12 @@ class Server extends LofiManager {
 
     ws.on('error', e => {
       errLog('websocket error onError', e);
-      clearInterval(this.intervalId);
+      clearInterval(intervalId);
       this._ws.delete(user_id);
     });
 
     ws.on('close', (reason) => {
-      clearInterval(this.intervalId);
+      clearInterval(intervalId);
       this._handleOnWsClose(reason, user_id);
     });
   }
