@@ -3,8 +3,8 @@ services:
   api:
     env_file: .env
     image: translite/buddy:${TAG}
-    build:
-      context: ./
+    # build:
+    #   context: ./
     restart: "unless-stopped"
     volumes:
       - "./:/usr/local/etc/goliatho"

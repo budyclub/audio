@@ -313,18 +313,20 @@ class LofiManager extends EventEmitter {
       case 'reconnect_to_lofi': {
         const { user_id, room_id, isSpeaker } = data;
 
-        if(!pWs) {
+        const ws = ctx._ws.has(user_id) ? ctx._ws.get(user_id) : null;
+
+        if(!ws) {
           errLog('no websocket connection for', user_id);
 
           return;
         }
         await Promise.all([
-          this._joinRoom(isSpeaker, room_id, user_id, lofi, pWs),
+          this._joinRoom(isSpeaker, room_id, user_id, lofi, ws),
 
-          this.sendWsMsg(pWs, this.encodeMsg({
+          this.sendWsMsg(ws, this.encodeMsg({
             act: 'reconnect_to_lofi_done',
             dt: true
-          })),
+          }))
         ]);
         break;
       }
