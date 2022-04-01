@@ -8,6 +8,7 @@ const {
   updateNotifiactionId,
   getNotificationIds,
   searchUsers,
+  updateUserProfile,
 } = require('../../../database/user');
 
 // const { createMessage, sendPushNotif } = require('../../../node-gcm/push-notification');
@@ -58,6 +59,16 @@ const routes = {
       // console.log('followers', resp?.dataValues?.follower?.length);
 
       res.json(resp?.dataValues ?? { id });
+    });
+  },
+
+  updateUserProfile() {
+    return router.put('update-user-profile/:user_id', async (req, res) => {
+      const data = req.body;
+      const id = req.params.user_id;
+      const resp = await updateUserProfile(id, data).catch(err => console.log('error updating user', err));
+
+      res.json(resp);
     });
   },
 

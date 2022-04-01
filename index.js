@@ -4,8 +4,10 @@ const RedisStore = require("connect-redis")(session);
 const process = require('process');
 
 const { Server } = require("./src/dusla/server");
+const { JobQueue } = require("./src/lib/jobs/jobqueue");
 const { redisConn } = require("./src/lib/redis/redisConn");
 
+process.title = 'budyclub';
 
 (async function() {
 
@@ -25,4 +27,10 @@ const { redisConn } = require("./src/lib/redis/redisConn");
 
   _sever._start();
   await Promise.resolve(_sever._createMediasoupWokers());
+
+  await Promise.all([JobQueue.Instance.start()]);
+
+  process.on('exit', (stream) => {
+    console.log(stream);
+  })
 }());

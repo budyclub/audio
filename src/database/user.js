@@ -39,7 +39,7 @@ const insertFollows = async (id_followed, id_following, act) => {
       });
 
       msg.addData({
-        click_action: `budyclub://Hoom`,
+        click_action: `budyclub://Home`,
         imgUrl: null,
         room_id: null,
         type: 'push',
@@ -158,16 +158,17 @@ const getFollowFollowers = async (user_id, c) => {
 const getNotificationIds = async (user_id) => {
   return await db.Follow.findAll({
     where: {
-      id_following: {
+      id_followed: {
         [Op.eq]: user_id,
-        [Op.ne]: null,
+        // [Op.ne]: null,
       }
     },
     attributes: { exclude: ['updatedAt', 'createdAt'] },
     include: [
       {
         model: db.Buddy_Club_User,
-        as: 'u_followed',
+        required: true,
+        as: 'u_following',
         attributes: ['notification_id'],
       }
     ]

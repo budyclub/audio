@@ -4,7 +4,6 @@ const process = require('process');
 const debug = require('debug');
 const express = require('express');
 const session = require('express-session');
-const bodyParser = require('body-parser');
 const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -19,6 +18,8 @@ const { createRoom, getRoom } = require('../../database/room');
 const { createRoomPeer } = require('../../database/roomPeers');
 const cache = require('../../lib/redis/cache');
 const { user: getCurrentUser, updateCurrentRoomId } = require("../../database/user");
+const { isHTTPSignatureDigestValid } = require("../../utils/crypto/crypto");
+const PushNotification = require("../../lib/notifier/pushnotification");
 
 const log = debug("Goliatho:server");
 const errLog = debug("Goliatho:ERROR");
@@ -46,11 +47,25 @@ class Server extends LofiManager {
   buildExpressApp() {
     const app = express();
 
+    app.disable('x-powered-by');
+
     app.set('port', this.port);
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(express.urlencoded({ extended: true }));
     app.set("trust proxy", 1);
-    app.use(express.json({ limit: '500kb' }));
+    app.use(express.json({
+      type: ['application/json', 'application/*+json'],
+      limit: '500kb',
+      verify: (req, res, buf) => {
+        // const valid = isHTTPSignatureDigestValid(buf, req);
+
+        // if (valid !== true) {
+        //   // res.fail({
+        //   //   status: HttpStatusCode.FORBIDDEN_403,
+        //   //   message: 'Invalid digest'
+        //   // })
+        // }
+      },
+    }));
     app.use(helmet());
     app.use(session({
       secret: this.sess_secret,
@@ -76,6 +91,7 @@ class Server extends LofiManager {
     app.use('/', login());
     app.use('/', routes.rooms());
     app.use('/', routes.userProfile());
+    app.use('/', routes.updateUserProfile())
     app.use('/', routes.follow());
     app.use('/', routes.ff());
     app.use('/', routes.setNotification_id());
@@ -172,6 +188,7 @@ class Server extends LofiManager {
 
         return;
       }
+      ws?.ping?.();
       ws.send('pong');
     }, 5000 + 1000);
 
@@ -261,12 +278,18 @@ class Server extends LofiManager {
 
     if(!resp) return;
 
-    const { room_id } = resp.dataValues;
+    const { dataValues } = resp;
 
     res.json({
       act: 'create_room_done',
-      room_id,
+      room_id: dataValues.room_id
     });
+
+    const { FB_id } = await this._returnUser(user_id);
+
+    const _p = new PushNotification({ ...dataValues, FB_id });
+
+    await _p.sendPushOnNewRoomCreation();
 
   }
 
@@ -315,7 +338,7 @@ class Server extends LofiManager {
     const resp = await this._createLofiSfuInstance(room_id, isSpeaker, user_id, this, isNewRecord).catch(err => log(err));
 
     // for debug purpose
-    console.log('_createLofiSfuInstance', resp);
+    // console.log('_createLofiSfuInstance', resp);
 
     res.json({
       act: 'join_room_done',
