@@ -71,6 +71,8 @@ services:
     restart: "unless-stopped"
     stdin_open: true
     tty: true
+    depends_on:
+      - certbot
     # ports:
     #   - "80:80"
     #   - "443:443"
@@ -83,8 +85,6 @@ services:
     network_mode: "host"
   certbot:
     image: "certbot/certbot:latest"
-    depends_on:
-      - "webserver"
     volumes:
       - "./certbot/www/:/var/www/certbot/:rw"
       - "./certbot/conf/:/etc/letsencrypt/:rw"
