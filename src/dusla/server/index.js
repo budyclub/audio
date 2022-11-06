@@ -104,6 +104,7 @@ class Server extends LofiManager {
     app.use('/', router.get('/room/:room_id/u/:user_id', async (req, res) => {
       await this.joinRoom(req, res).catch(err => errLog('join room error', err));
     }));
+    app.use('/', routes._crateClub());
 
     return app;
   }

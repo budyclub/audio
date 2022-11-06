@@ -14,6 +14,7 @@ const {
 // const { createMessage, sendPushNotif } = require('../../../node-gcm/push-notification');
 const { getAllRooms: _getAllrooms, getRoom: _getRoom } = require('../../../database/room');
 const { _updatePeerRoomPermisions, _updatePeerSpeaker } = require('../../../database/roomPeers');
+const { createClub } = require('../../../database/club');
 
 const routes = {
   rooms() {
@@ -136,7 +137,24 @@ const routes = {
         console.log(err);
       }
     });
-  }
+  },
+  // create club
+
+
+  _crateClub() {
+    return router.post('/create-club', async (req, res) => {
+      const data = req.body.club;
+
+      try {
+        const resp = await createClub(data);
+
+        res.json(resp);
+      } catch (err) {
+        console.log(err);
+      }
+    })
+  },
+
 }
 
 module.exports = routes;
