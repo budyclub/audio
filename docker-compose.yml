@@ -47,10 +47,10 @@ services:
     container_name: webserver
     restart: unless-stopped
     volumes:
-      - ./web-root:/var/www/html
-      - ./nginx:/etc/nginx/conf.d
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
+      - ./web-root/:/var/www/html
+      - ./nginx/conf:/etc/nginx/conf.d/:ro
+      - certbot-etc:/etc/letsencrypt/:ro
+      - certbot-var:/var/lib/letsencrypt/:ro
     depends_on:
       - api
     network_mode: host
@@ -68,9 +68,9 @@ services:
     image: certbot/certbot
     container_name: certbot
     volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - ./web-root:/var/www/html
+      - certbot-etc:/etc/letsencrypt/:rw
+      - certbot-var:/var/lib/letsencrypt/:rw
+      - ./web-root/:/var/www/html
     depends_on:
       - webserver
     command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
