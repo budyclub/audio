@@ -51,7 +51,7 @@ services:
       - ./web-root/:/var/www/html
     depends_on:
       - webserver
-    command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com --agree-tos --no-eff-email -d budyclub.com -d www.budyclub.com
+    command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com -d budyclub.com -d www.budyclub.com
 
 volumes:
   certbot-etc:
