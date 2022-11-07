@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.8'
 services:
   api:
     env_file: .env
@@ -18,8 +18,6 @@ services:
     depends_on:
       - "webserver"
       - "redis"
-    # links:
-    #   - "redis"
     logging:
       driver: "json-file"
       options:
@@ -62,21 +60,17 @@ services:
     restart: "unless-stopped"
     stdin_open: true
     tty: true
-    # networks:
-    #   - "budyclub"
     volumes:
       - "./nginx/conf/:/etc/nginx/conf.d/:ro"
       - "./certbot/www:/var/www/certbot/:ro"
       - "./certbot/conf/:/etc/nginx/ssl/:ro"
     network_mode: "host"
-    # command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-  certbot:
-    image: "certbot/certbot:latest"
-    restart: "unless-stopped"
-    volumes:
-      - "./certbot/www/:/var/www/certbot/:rw"
-      - "./certbot/conf/:/etc/letsencrypt/:rw"
-    # entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+  # certbot:
+  #   image: "certbot/certbot:latest"
+  #   restart: "unless-stopped"
+  #   volumes:
+  #     - "./certbot/www/:/var/www/certbot/:rw"
+  #     - "./certbot/conf/:/etc/letsencrypt/:rw"
 networks:
   budyclub:
     driver: "host"
@@ -84,5 +78,3 @@ networks:
 
 # reference
 # https://mindsers.blog/post/https-using-nginx-certbot-docker/
-
-# Pass2ngei004@ linode

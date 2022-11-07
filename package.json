@@ -10,9 +10,9 @@
     "undo": "export NODE_ENV=production&& cd src&& npx sequelize-cli db:migrate:undo",
     "sync": "export NODE_ENV=development&& cd src/database&& node index.js",
     "undoall": "export NODE_ENV=production&& cd src&& npx sequelize-cli db:migrate:undo:all",
-    "dev": "export NODE_ENV=development&& cross-env DEBUG=Goliatho:* nodemon ./src/g.js",
+    "dev": "export NODE_ENV=development&& cross-env DEBUG=Goliatho:* nodemon index.js",
     "prod": "export NODE_ENV=production&& cross-env DEBUG=Goliatho:* node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "reb": "rebuild"
   },
   "dependencies": {
     "@sentry/node": "^6.11.0",
@@ -37,7 +37,7 @@
     "ioredis": "^4.28.5",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
-    "mediasoup": "3",
+    "mediasoup": "^3.11.3",
     "node-gcm": "^1.0.5",
     "pg": "^8.7.3",
     "pg-hstore": "^2.3.4",
