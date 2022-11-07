@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./web-root:/var/www/html
-      - ./nginx-conf:/etc/nginx/conf.d
+      - ./nginx:/etc/nginx/conf.d
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
     depends_on:
@@ -73,7 +73,7 @@ services:
       - ./web-root:/var/www/html
     depends_on:
       - webserver
-    command: certonly -v --webroot --webroot-path=/var/lib/letsencrypt --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
+    command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
 
 volumes:
   certbot-etc:
