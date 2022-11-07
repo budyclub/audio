@@ -27,6 +27,7 @@ services:
     volumes:
       - "./redis:/usr/local/etc/redis"
   #Nginx Service
+
   # webserver:
   #   image: "nginx:alpine"
   #   container_name: "budyclubApi"
@@ -62,8 +63,9 @@ services:
   #   depends_on:
   #     - "webserver"
   #   command: certonly --webroot --webroot-path=/var/www/certbot --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
+  
   certbot:
-    image: certbot/certbot:latest
+    image: certbot/certbot
     container_name: certbot
     volumes:
       - certbot-etc:/etc/letsencrypt
@@ -71,14 +73,15 @@ services:
       - ./web-root:/var/www/html
     depends_on:
       - webserver
-    command: certonly --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
+    command: certonly -v --webroot --webroot-path=/var/lib/letsencrypt --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
 
 volumes:
   certbot-etc:
   certbot-var:
-networks:
-  budyclub:
-    driver: "host"
+
+# networks:
+#   budyclub:
+#     driver: "host"
 
 
 # reference
