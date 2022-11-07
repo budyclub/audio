@@ -28,20 +28,6 @@ services:
       - "./redis:/usr/local/etc/redis"
   #Nginx Service
 
-  # webserver:
-  #   image: "nginx:alpine"
-  #   container_name: "budyclubApi"
-  #   restart: "unless-stopped"
-  #   stdin_open: true
-  #   tty: true
-  #   volumes:
-  #     - "./nginx/conf/:/etc/nginx/conf.d/:ro"
-  #     - "./certbot/www:/var/www/certbot/:ro"
-  #     - "./certbot/conf/:/etc/nginx/ssl/:ro"
-  #   depends_on:
-  #     - "api"
-  #   network_mode: "host"
-
   webserver:
     image: nginx:mainline-alpine
     container_name: webserver
@@ -51,19 +37,11 @@ services:
       - ./nginx/conf:/etc/nginx/conf.d/:ro
       - certbot-etc:/etc/letsencrypt/:ro
       - certbot-var:/var/lib/letsencrypt/:ro
+      - ./dhparam/:/etc/ssl/certs
     depends_on:
       - api
     network_mode: host
 
-  # certbot:
-  #   image: "certbot/certbot:latest"
-  #   volumes:
-  #     - "./certbot/www/:/var/www/certbot/:rw"
-  #     - "./certbot/conf/:/etc/letsencrypt/:rw"
-  #   depends_on:
-  #     - "webserver"
-  #   command: certonly --webroot --webroot-path=/var/www/certbot --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
-  
   certbot:
     image: certbot/certbot
     container_name: certbot
@@ -73,16 +51,11 @@ services:
       - ./web-root/:/var/www/html
     depends_on:
       - webserver
-    command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
+    command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com --agree-tos --no-eff-email --force-renewal -d budyclub.com -d www.budyclub.com
 
 volumes:
   certbot-etc:
   certbot-var:
-
-# networks:
-#   budyclub:
-#     driver: "host"
-
 
 # reference
 # https://mindsers.blog/post/https-using-nginx-certbot-docker/
