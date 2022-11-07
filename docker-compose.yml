@@ -42,16 +42,16 @@ services:
       - api
     network_mode: host
 
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    volumes:
-      - certbot-etc:/etc/letsencrypt/:rw
-      - certbot-var:/var/lib/letsencrypt/:rw
-      - ./web-root/:/var/www/html
-    depends_on:
-      - webserver
-    # command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com -d budyclub.com -d www.budyclub.com
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: certbot
+  #   volumes:
+  #     - certbot-etc:/etc/letsencrypt/:rw
+  #     - certbot-var:/var/lib/letsencrypt/:rw
+  #     - ./web-root/:/var/www/html
+  #   depends_on:
+  #     - webserver
+  #   # command: certonly -v --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com -d budyclub.com -d www.budyclub.com
 
 volumes:
   certbot-etc:
@@ -59,3 +59,7 @@ volumes:
 
 # reference
 # https://mindsers.blog/post/https-using-nginx-certbot-docker/
+
+# docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/html -d budyclub.com -d www.budyclub.com
+
+# docker compose run --rm certbot renew
