@@ -65,11 +65,10 @@ services:
       - "./certbot/www:/var/www/certbot/:ro"
       # - "./certbot/conf/:/etc/nginx/ssl/:ro"
     network_mode: "host"
-  # certbot:
-  #   image: "certbot/certbot:latest"
-  #   restart: "unless-stopped"
-  #   volumes:
-  #     - "./certbot/www/:/var/www/certbot/:rw"
+  certbot:
+    image: "certbot/certbot:latest"
+    volumes:
+      - "./certbot/www/:/var/www/certbot/:rw"
   #     - "./certbot/conf/:/etc/letsencrypt/:rw"
 networks:
   budyclub:
