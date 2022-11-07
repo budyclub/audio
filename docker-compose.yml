@@ -58,6 +58,7 @@ volumes:
   certbot-var:
 
 # reference
+# https://www.digitalocean.com/community/tutorials/how-to-secure-a-containerized-node-js-application-with-nginx-let-s-encrypt-and-docker-compose
 # https://mindsers.blog/post/https-using-nginx-certbot-docker/
 
 # docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/html -d budyclub.com -d www.budyclub.com
