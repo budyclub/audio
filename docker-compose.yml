@@ -27,27 +27,61 @@ services:
     volumes:
       - "./redis:/usr/local/etc/redis"
   #Nginx Service
+  # webserver:
+  #   image: "nginx:alpine"
+  #   container_name: "budyclubApi"
+  #   restart: "unless-stopped"
+  #   stdin_open: true
+  #   tty: true
+  #   volumes:
+  #     - "./nginx/conf/:/etc/nginx/conf.d/:ro"
+  #     - "./certbot/www:/var/www/certbot/:ro"
+  #     - "./certbot/conf/:/etc/nginx/ssl/:ro"
+  #   depends_on:
+  #     - "api"
+  #   network_mode: "host"
+
   webserver:
-    image: "nginx:alpine"
-    container_name: "budyclubApi"
-    restart: "unless-stopped"
-    stdin_open: true
-    tty: true
+    image: nginx:mainline-alpine
+    container_name: webserver
+    restart: unless-stopped
     volumes:
-      - "./nginx/conf/:/etc/nginx/conf.d/:ro"
-      - "./certbot/www:/var/www/certbot/:ro"
-      - "./certbot/conf/:/etc/nginx/ssl/:ro"
+      - web-root:/var/www/html
+      - ./nginx-conf:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
     depends_on:
-      - "api"
-    network_mode: "host"
+      - api
+    network_mode: host
+
+  # certbot:
+  #   image: "certbot/certbot:latest"
+  #   volumes:
+  #     - "./certbot/www/:/var/www/certbot/:rw"
+  #     - "./certbot/conf/:/etc/letsencrypt/:rw"
+  #   depends_on:
+  #     - "webserver"
+  #   command: certonly --webroot --webroot-path=/var/www/certbot --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
   certbot:
-    image: "certbot/certbot:latest"
+    image: certbot/certbot:latest
+    container_name: certbot
     volumes:
-      - "./certbot/www/:/var/www/certbot/:rw"
-      - "./certbot/conf/:/etc/letsencrypt/:rw"
-    # depends_on:
-    #   - "webserver"
-    # command: certonly --webroot --webroot-path=/var/www/certbot --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - web-root:/var/www/html
+    depends_on:
+      - webserver
+    command: certonly --webroot --webroot-path=/var/www/html --email biz.john@yahoo.com --agree-tos --no-eff-email --staging -d budyclub.com -d www.budyclub.com
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  web-root:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/ngugi/live/
+      o: bind
 networks:
   budyclub:
     driver: "host"
