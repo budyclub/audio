@@ -35,7 +35,7 @@ const routes = {
         // res.json(data);
       } catch (err) {
         errLog(err);
-        res.end(err)
+        return res.end(err)
       }
     });
   },
