@@ -1,5 +1,5 @@
 const router = require('express').Router();
-
+const debug = require('debug');
 const {
   user,
   insertFollows,
@@ -16,6 +16,8 @@ const { getAllRooms: _getAllrooms, getRoom: _getRoom } = require('../../../datab
 const { _updatePeerRoomPermisions, _updatePeerSpeaker } = require('../../../database/roomPeers');
 const { createClub } = require('../../../database/club');
 
+const errLog = debug("Goliatho:ERROR");
+
 const routes = {
   rooms() {
     return router.get('/rooms/lim/:limit/offs/:offset', async (req, res) => {
@@ -28,11 +30,12 @@ const routes = {
         const rooms = await _getAllrooms(limit, offset);
 
         if(rooms.length > 0 && rooms) {
-          res.json(rooms);
+          return res.json(rooms);
         }
         // res.json(data);
       } catch (err) {
         errLog(err);
+        res.end(err)
       }
     });
   },
